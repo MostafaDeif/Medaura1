@@ -205,37 +205,64 @@ export default function EditProfileForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (loading) return;
+
     setLoading(true);
     setError(null);
+    setSuccess(false);
 
     try {
       const payload = buildRequestPayload(formData);
-      const requestInit: RequestInit = {
-        method: "PATCH",
-        credentials: "include",
-      };
 
       const multipartBody = new FormData();
+
       appendPayloadToFormData(multipartBody, payload);
+
       if (photoFile) {
-        multipartBody.set("photo", photoFile);
+        multipartBody.append("photo", photoFile);
       }
-      requestInit.body = multipartBody;
-
-      const response = await fetch("/api/user/me", requestInit);
-      const result = await response.json();
-
       
-      if (!response.ok || result.status !== "success") {
-        throw new Error(result.message || "Failed to update profile");
-      }
-      setSuccess(true);
-      onSuccess?.(getUpdatedProfile(result) ?? {});
+      const response = await fetch("/api/user/me", {
+        method: "PATCH",
+        credentials: "include",
+        body: multipartBody,
+      });
 
-      window.setTimeout(() => {
-        onClose();
-      }, 700);
+      let result = null;
+
+      try {
+        result = await response.json();
+      } catch {
+        result = null;
+      }
+
+      console.log("PROFILE UPDATE RESPONSE:", result);
+
+      // لو الـ API رجع 200 او 201 يبقي نجاح
+      if (!response.ok) {
+        throw new Error(
+          result?.message || result?.error || "Failed to update profile",
+        );
+      }
+
+      setSuccess(true);
+
+      // تحديث البيانات فورًا
+      const updatedProfile = getUpdatedProfile(result) || {
+        ...formData,
+        photo: photoPreview,
+      };
+
+      onSuccess?.(updatedProfile);
+
+      // استني شوية للصورة
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (err) {
+      console.error(err);
+
       setError(err instanceof Error ? err.message : "Failed to update profile");
     } finally {
       setLoading(false);

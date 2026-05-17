@@ -13,38 +13,7 @@ interface Appointment {
 }
 
 const fallbackAppointments: Appointment[] = [
-    {
-      id: 1,
-      name: "محمد خالد",
-      specialty: "مخ واعصاب",
-      time: "11:35  PM - 16 Jul 2025",
-      image: "https://i.pravatar.cc/40?img=1",
-      status: "pending",
-    },
-    {
-      id: 2,
-      name: "محمد خالد",
-      specialty: "جلدية",
-      time: "11:35  PM - 16 Jul 2025",
-      image: "https://i.pravatar.cc/40?img=2",
-      status: "pending",
-    },
-    {
-      id: 3,
-      name: "محمد خالد",
-      specialty: "اسنان",
-      time: "11:35  PM - 16 Jul 2025",
-      image: "https://i.pravatar.cc/40?img=3",
-      status: "pending",
-    },
-    {
-      id: 4,
-      name: "محمد خالد",
-      specialty: "عظام",
-      time: "11:35  PM - 16 Jul 2025",
-      image: "https://i.pravatar.cc/40?img=4",
-      status: "pending",
-    },
+
   ];
 
 export default function AppointsmentRequests({
