@@ -11,39 +11,39 @@ import type {
 
 export const clinicService = {
   async create(data: ClinicRequest, token: string) {
-    return apiClient.post<ClinicProfile>("/api/clinic", data, { token });
+    return apiClient.post<ClinicProfile>("/clinic/create", data, { token });
   },
 
   async getProfile(clinicId: number) {
-    return apiClient.get<ClinicProfile>(`/api/clinic/profile?id=${clinicId}`);
+    return apiClient.get<ClinicProfile>(`/api/clinic/${clinicId}/profile`);
   },
 
   async updateProfile(clinicId: number, data: Partial<ClinicRequest>, token: string) {
     return apiClient.put<ClinicProfile>(
-      `/api/clinic/${clinicId}`,
+      `/clinic/${clinicId}`,
       data,
       { token }
     );
   },
 
   async getStats(token: string) {
-    return apiClient.get<ClinicStats>("/api/clinic/stats", { token });
+    return apiClient.get<ClinicStats>("/clinic/stats", { token });
   },
 
   async getStaff(token: string) {
-    return apiClient.get<StaffProfile[]>("/api/clinic/staff", { token });
+    return apiClient.get<StaffProfile[]>("/clinic/staff", { token });
   },
 
   async getBookings(token: string, clinicId?: number) {
     const endpoint = clinicId
-      ? `/api/clinic/bookings?clinic_id=${clinicId}`
-      : "/api/clinic/bookings";
+      ? `/clinic/bookings?clinic_id=${clinicId}`
+      : "/clinic/bookings";
 
     return apiClient.get<ClinicBooking[]>(endpoint, { token });
   },
 
   async createBooking(data: BookingRequest, token: string) {
-    return apiClient.post<BookingResponse>("/api/clinic/bookings", data, {
+    return apiClient.post<BookingResponse>("/clinic/bookings", data, {
       token,
     });
   },

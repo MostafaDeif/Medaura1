@@ -36,7 +36,7 @@ type ApiStaffProfile = {
   average_rating?: number | string;
   total_ratings?: number | string;
   photo?: string | null;
-  about?: string;
+  bio?: string;
   verified?: boolean;
   clinic_name?: string;
   clinic_location?: string;
@@ -178,9 +178,7 @@ function normalizeRatingsPayload(payload: unknown) {
   if (!isRecord(source)) return null;
 
   const summarySource = isRecord(source.summary) ? source.summary : {};
-  const paginationSource = isRecord(source.pagination)
-    ? source.pagination
-    : {};
+  const paginationSource = isRecord(source.pagination) ? source.pagination : {};
   const ratingsSource = Array.isArray(source.ratings) ? source.ratings : [];
 
   const summary: RatingsSummary = {
@@ -338,8 +336,7 @@ export default function BookingPage() {
   const [staffRatingComment, setStaffRatingComment] = useState("");
   const [staffRatingSubmitting, setStaffRatingSubmitting] = useState(false);
   const [staffRatingSubmitError, setStaffRatingSubmitError] = useState("");
-  const [staffRatingSubmitSuccess, setStaffRatingSubmitSuccess] =
-    useState("");
+  const [staffRatingSubmitSuccess, setStaffRatingSubmitSuccess] = useState("");
   const [staffRatingsRefreshKey, setStaffRatingsRefreshKey] = useState(0);
   const [validationModalData, setValidationModalData] = useState<{
     type: "success" | "warning";
@@ -664,9 +661,7 @@ export default function BookingPage() {
       setStaffRatingSubmitError(
         getErrorMessage(
           error,
-          locale === "ar"
-            ? "تعذر إرسال التقييم."
-            : "Failed to submit rating.",
+          locale === "ar" ? "تعذر إرسال التقييم." : "Failed to submit rating.",
         ),
       );
     } finally {
@@ -838,7 +833,7 @@ export default function BookingPage() {
                       )}
                     </div>
                     <p className="text-gray-500 font-medium">
-                      {t("specialties.doctors", locale)} {doctorSpecialty}
+                      {doctorSpecialty}
                     </p>
                     <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-[#fff7e3] px-4 py-2">
                       <RatingStars rating={doctorRating} />
@@ -914,7 +909,7 @@ export default function BookingPage() {
                 {t("booking.aboutDoctor", locale)}
               </h2>
               <p className="text-gray-500 leading-relaxed text-sm">
-                {staff.about ||
+                {staff.bio ||
                   (locale === "ar"
                     ? "استشاري متخصص بخبرة واسعة في مجاله، يحرص على تقديم أفضل رعاية طبية للمرضى."
                     : "Specialized consultant with extensive experience, focused on providing high quality medical care.")}
@@ -996,15 +991,15 @@ export default function BookingPage() {
           <div className="mt-6">
             {staffRatingsLoading ? (
               <p className="text-center text-[#001A6E]">
-                {locale === "ar" ? "جاري تحميل التقييمات..." : "Loading ratings..."}
+                {locale === "ar"
+                  ? "جاري تحميل التقييمات..."
+                  : "Loading ratings..."}
               </p>
             ) : staffRatingsError ? (
               <p className="text-center text-red-600">{staffRatingsError}</p>
             ) : staffRatings.length === 0 ? (
               <p className="text-center text-gray-400">
-                {locale === "ar"
-                  ? "لا توجد تقييمات بعد."
-                  : "No reviews yet."}
+                {locale === "ar" ? "لا توجد تقييمات بعد." : "No reviews yet."}
               </p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
