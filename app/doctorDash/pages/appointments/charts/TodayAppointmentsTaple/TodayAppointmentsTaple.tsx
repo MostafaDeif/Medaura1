@@ -70,7 +70,7 @@ export default function TodayAppointmentsTaple() {
 
           type: "كشف جديد",
 
-          img: "https://i.pravatar.cc/40?img=3",
+          // img: "https://i.pravatar.cc/40?img=3",
         }));
 
         console.log("FORMATTED => ", formattedData);
@@ -185,11 +185,11 @@ export default function TodayAppointmentsTaple() {
                         </p>
                       </div>
 
-                      <img
+                      {/* <img
                         src={p.img}
                         className="w-9 h-9 rounded-full object-cover"
                         alt="patient"
-                      />
+                      /> */}
                     </div>
                   </td>
                 </tr>

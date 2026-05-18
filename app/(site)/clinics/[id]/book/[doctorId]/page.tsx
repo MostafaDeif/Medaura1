@@ -316,11 +316,8 @@ export default function BookingPage() {
   const [selectedTime, setSelectedTime] = useState("");
   const [isBooking, setIsBooking] = useState(false);
   const [showValidationModal, setShowValidationModal] = useState(false);
-  const [locale, setLocale] = useState(() =>
-    typeof window === "undefined"
-      ? "en"
-      : localStorage.getItem("locale") || "en",
-  );
+  const [locale, setLocale] = useState<"ar" | "en">("en");
+  const [mounted, setMounted] = useState(false);
   const [staff, setStaff] = useState<ApiStaffProfile | null>(null);
   const [clinicProfile, setClinicProfile] = useState<ApiClinicProfile | null>(
     null,
@@ -349,6 +346,16 @@ export default function BookingPage() {
     title: string;
     message: string;
   } | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+
+    const savedLocale = localStorage.getItem("locale") as "ar" | "en" | null;
+
+    if (savedLocale) {
+      setLocale(savedLocale);
+    }
+  }, []);
 
   useEffect(() => {
     const handleLocaleChange: EventListener = (event) => {
