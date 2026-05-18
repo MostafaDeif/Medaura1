@@ -20,7 +20,7 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
-// POST /api/ratings/clinic?id=1
+// POST /api/ratings/staff?id=1
 export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get("authorization");
@@ -33,20 +33,20 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "Missing authorization token",
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const { searchParams } = new URL(request.url);
-    const clinicId = searchParams.get("id");
+    const staffId = searchParams.get("id");
 
-    if (!clinicId) {
+    if (!staffId) {
       return NextResponse.json(
         {
           success: false,
-          error: "Missing clinic ID parameter",
+          error: "Missing staff ID parameter",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -58,16 +58,16 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "Missing required field: rating",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     let response;
     try {
-      response = await ratingService.rateClinic(
-        parseInt(clinicId),
+      response = await ratingService.rateStaff(
+        parseInt(staffId),
         body,
-        token
+        token,
       );
     } catch (error: unknown) {
       if (!isUnauthorized(error)) throw error;
@@ -77,44 +77,44 @@ export async function POST(request: NextRequest) {
 
       if (!token) throw error;
 
-      response = await ratingService.rateClinic(
-        parseInt(clinicId),
+      response = await ratingService.rateStaff(
+        parseInt(staffId),
         body,
-        token
+        token,
       );
     }
 
     return applyAuthCookies(
       NextResponse.json({ success: true, data: response }, { status: 201 }),
-      auth
+      auth,
     );
   } catch (error: any) {
-    console.error("Rate clinic error:", error);
+    console.error("Rate staff error:", error);
     return NextResponse.json(
       {
         success: false,
-        error: getErrorMessage(error, "Failed to rate clinic"),
+        error: getErrorMessage(error, "Failed to rate staff"),
       },
-      { status: getErrorStatus(error) }
+      { status: getErrorStatus(error) },
     );
   }
 }
 
-// GET /api/ratings/clinic?id=1
+// GET /api/ratings/staff?id=1
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const clinicId = searchParams.get("id");
+    const staffId = searchParams.get("id");
     const page = searchParams.get("page");
     const limit = searchParams.get("limit");
 
-    if (!clinicId) {
+    if (!staffId) {
       return NextResponse.json(
         {
           success: false,
-          error: "Missing clinic ID parameter",
+          error: "Missing staff ID parameter",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -125,13 +125,13 @@ export async function GET(request: NextRequest) {
     let response;
 
     try {
-      response = await ratingService.getClinicRatings(
-        parseInt(clinicId),
+      response = await ratingService.getStaffRatings(
+        parseInt(staffId),
         {
           page: page ? Number(page) : undefined,
           limit: limit ? Number(limit) : undefined,
         },
-        token ?? undefined
+        token ?? undefined,
       );
     } catch (error: unknown) {
       if (!isUnauthorized(error)) throw error;
@@ -139,28 +139,28 @@ export async function GET(request: NextRequest) {
       auth = await getServerAccessToken(request, { forceRefresh: true });
       token = auth.token || authHeader?.replace("Bearer ", "");
 
-      response = await ratingService.getClinicRatings(
-        parseInt(clinicId),
+      response = await ratingService.getStaffRatings(
+        parseInt(staffId),
         {
           page: page ? Number(page) : undefined,
           limit: limit ? Number(limit) : undefined,
         },
-        token ?? undefined
+        token ?? undefined,
       );
     }
 
     return applyAuthCookies(
       NextResponse.json({ success: true, data: response }),
-      auth
+      auth,
     );
   } catch (error: any) {
-    console.error("Get clinic ratings error:", error);
+    console.error("Get staff ratings error:", error);
     return NextResponse.json(
       {
         success: false,
-        error: getErrorMessage(error, "Failed to fetch clinic ratings"),
+        error: getErrorMessage(error, "Failed to fetch staff ratings"),
       },
-      { status: getErrorStatus(error) }
+      { status: getErrorStatus(error) },
     );
   }
 }

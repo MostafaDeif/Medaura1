@@ -8,6 +8,7 @@ import DoctorCard from "@/components/home/doctorCard/doctorCard";
 import { t } from "@/i18n";
 
 const API_BASE_URL = "http://127.0.0.1:3001/api";
+const RATINGS_PAGE_SIZE = 4;
 
 type ClinicDoctor = {
   staff_id: number;
@@ -20,6 +21,9 @@ type ClinicDoctor = {
   consultation_price: number;
   photo: string | null;
   can_be_booked: number;
+  average_rating?: number;
+  total_ratings?: number;
+  years_of_experience?: number;
 };
 
 type GeoLocation = {
@@ -40,6 +44,26 @@ type ClinicProfileData = {
 
 type ApiRecord = Record<string, unknown>;
 
+type RatingsSummary = {
+  total_ratings: number;
+  average_rating: number;
+};
+
+type RatingsPagination = {
+  page: number;
+  limit: number;
+  total_pages: number;
+};
+
+type RatingItem = {
+  rating_id: number;
+  rating: number;
+  comment: string;
+  patient_name: string;
+  patient_photo: string;
+  created_at: string;
+};
+
 function isRecord(value: unknown): value is ApiRecord {
   return typeof value === "object" && value !== null;
 }
@@ -51,6 +75,78 @@ function unwrapData(data: unknown): unknown {
 
 function toNumber(value: unknown, fallback: number) {
   return Number.isFinite(Number(value)) ? Number(value) : fallback;
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
+function getPayloadMessage(payload: unknown, fallback: string) {
+  if (!isRecord(payload)) return fallback;
+  const message = payload.message ?? payload.error;
+  return typeof message === "string" && message.trim() ? message : fallback;
+}
+
+function normalizeRatingItem(entry: unknown, index: number): RatingItem {
+  if (!isRecord(entry)) {
+    return {
+      rating_id: index + 1,
+      rating: 0,
+      comment: "",
+      patient_name: "",
+      patient_photo: "",
+      created_at: "",
+    };
+  }
+
+  return {
+    rating_id: toNumber(entry.rating_id ?? entry.id, index + 1),
+    rating: toNumber(entry.rating, 0),
+    comment: typeof entry.comment === "string" ? entry.comment : "",
+    patient_name:
+      typeof entry.patient_name === "string" ? entry.patient_name : "",
+    patient_photo:
+      typeof entry.patient_photo === "string" ? entry.patient_photo : "",
+    created_at: typeof entry.created_at === "string" ? entry.created_at : "",
+  };
+}
+
+function normalizeRatingsPayload(payload: unknown) {
+  const source =
+    isRecord(payload) && payload.data !== undefined ? payload.data : payload;
+  if (!isRecord(source)) return null;
+
+  const summarySource = isRecord(source.summary) ? source.summary : {};
+  const paginationSource = isRecord(source.pagination)
+    ? source.pagination
+    : {};
+  const ratingsSource = Array.isArray(source.ratings) ? source.ratings : [];
+
+  const summary: RatingsSummary = {
+    total_ratings: toNumber(
+      summarySource.total_ratings ?? summarySource.count ?? source.results,
+      0,
+    ),
+    average_rating: toNumber(
+      summarySource.average_rating ?? summarySource.avg_rating,
+      0,
+    ),
+  };
+
+  const pagination: RatingsPagination = {
+    page: toNumber(paginationSource.page, 1),
+    limit: toNumber(paginationSource.limit, RATINGS_PAGE_SIZE),
+    total_pages: toNumber(
+      paginationSource.total_pages ?? paginationSource.pages,
+      1,
+    ),
+  };
+
+  const ratings = ratingsSource.map((entry, index) =>
+    normalizeRatingItem(entry, index),
+  );
+
+  return { summary, pagination, ratings };
 }
 
 function normalizeClinic(
@@ -67,8 +163,11 @@ function normalizeClinic(
     typeof value.photo === "string" && value.photo.trim()
       ? value.photo
       : "/images/clinic1.png";
-  const totalRatings = toNumber(value.total_ratings, 0);
-  const averageRating = toNumber(value.average_rating, 0);
+  const totalRatings = toNumber(
+    value.total_ratings ?? value.ratings_count,
+    0,
+  );
+  const averageRating = toNumber(value.average_rating ?? value.rating, 0);
   const geoLocation =
     isRecord(value.geo_location) &&
     typeof value.geo_location.latitude === "number" &&
@@ -99,6 +198,13 @@ function normalizeDoctors(value: unknown): ClinicDoctor[] {
   for (const [index, entry] of value.entries()) {
     if (!isRecord(entry)) continue;
 
+    const averageRating = toNumber(entry.average_rating ?? entry.rating, 0);
+    const totalRatings = toNumber(
+      entry.total_ratings ?? entry.ratings_count,
+      0,
+    );
+    const yearsOfExperience = toNumber(entry.years_of_experience, 0);
+
     doctors.push({
       staff_id: toNumber(entry.staff_id ?? entry.id, index + 1),
       full_name:
@@ -120,6 +226,9 @@ function normalizeDoctors(value: unknown): ClinicDoctor[] {
           : entry.can_be_booked
             ? 1
             : 0,
+      average_rating: averageRating,
+      total_ratings: totalRatings,
+      years_of_experience: yearsOfExperience,
     });
   }
 
@@ -183,6 +292,20 @@ export default function ClinicDetailsPage() {
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [doctors, setDoctors] = useState<ClinicDoctor[]>([]);
+  const [clinicRatings, setClinicRatings] = useState<RatingItem[]>([]);
+  const [clinicRatingsSummary, setClinicRatingsSummary] =
+    useState<RatingsSummary | null>(null);
+  const [clinicRatingsPage, setClinicRatingsPage] = useState(1);
+  const [clinicRatingsTotalPages, setClinicRatingsTotalPages] = useState(1);
+  const [clinicRatingsLoading, setClinicRatingsLoading] = useState(false);
+  const [clinicRatingsError, setClinicRatingsError] = useState("");
+  const [clinicRatingValue, setClinicRatingValue] = useState(0);
+  const [clinicRatingComment, setClinicRatingComment] = useState("");
+  const [clinicRatingSubmitting, setClinicRatingSubmitting] = useState(false);
+  const [clinicRatingSubmitError, setClinicRatingSubmitError] = useState("");
+  const [clinicRatingSubmitSuccess, setClinicRatingSubmitSuccess] =
+    useState("");
+  const [clinicRatingsRefreshKey, setClinicRatingsRefreshKey] = useState(0);
 
   useEffect(() => {
     const handleLocaleChange: EventListener = (event) => {
@@ -191,6 +314,10 @@ export default function ClinicDetailsPage() {
     window.addEventListener("localeChange", handleLocaleChange);
     return () => window.removeEventListener("localeChange", handleLocaleChange);
   }, []);
+
+  useEffect(() => {
+    setClinicRatingsPage(1);
+  }, [clinicId]);
 
   useEffect(() => {
     async function loadClinicProfile() {
@@ -239,6 +366,62 @@ export default function ClinicDetailsPage() {
     loadClinicProfile();
   }, [clinicId]);
 
+  useEffect(() => {
+    if (!clinicId) return;
+    let active = true;
+
+    async function loadClinicRatings() {
+      setClinicRatingsLoading(true);
+      setClinicRatingsError("");
+
+      try {
+        const params = new URLSearchParams({
+          id: String(clinicId),
+          page: String(clinicRatingsPage),
+          limit: String(RATINGS_PAGE_SIZE),
+        });
+
+        const response = await fetch(
+          `/api/ratings/clinic?${params.toString()}`,
+          { credentials: "include" },
+        );
+        const payload = await response.json();
+
+        if (
+          !response.ok ||
+          (isRecord(payload) &&
+            typeof payload.status === "string" &&
+            payload.status !== "success") ||
+          (isRecord(payload) && payload.success === false)
+        ) {
+          throw new Error(
+            getPayloadMessage(payload, "Failed to load clinic ratings"),
+          );
+        }
+
+        const normalized = normalizeRatingsPayload(payload);
+        if (!active || !normalized) return;
+
+        setClinicRatings(normalized.ratings);
+        setClinicRatingsSummary(normalized.summary);
+        setClinicRatingsTotalPages(normalized.pagination.total_pages || 1);
+      } catch (error: unknown) {
+        if (!active) return;
+        setClinicRatingsError(
+          getErrorMessage(error, "Failed to load clinic ratings"),
+        );
+      } finally {
+        if (active) setClinicRatingsLoading(false);
+      }
+    }
+
+    loadClinicRatings();
+
+    return () => {
+      active = false;
+    };
+  }, [clinicId, clinicRatingsPage, clinicRatingsRefreshKey]);
+
   const clinic = clinicProfile;
   const clinicSpecialties = Array.from(
     new Set(
@@ -248,8 +431,15 @@ export default function ClinicDetailsPage() {
     ),
   );
   const clinicHours = getClinicHours(doctors);
-  const ratingValue = getSafeRating(clinic?.average_rating);
-  const ratingCount = clinic?.total_ratings ?? 0;
+  const baseRatingValue = getSafeRating(clinic?.average_rating);
+  const baseRatingCount = clinic?.total_ratings ?? 0;
+  const summaryRatingCount = clinicRatingsSummary?.total_ratings ?? 0;
+  const summaryRatingValue = getSafeRating(
+    clinicRatingsSummary?.average_rating,
+  );
+  const hasSummary = clinicRatingsSummary !== null;
+  const ratingValue = hasSummary ? summaryRatingValue : baseRatingValue;
+  const ratingCount = hasSummary ? summaryRatingCount : baseRatingCount;
   const mapSrc = clinic?.geo_location
     ? `https://maps.google.com/maps?q=${clinic.geo_location.latitude},${clinic.geo_location.longitude}&z=15&output=embed`
     : `https://maps.google.com/maps?q=${encodeURIComponent(
@@ -265,6 +455,71 @@ export default function ClinicDetailsPage() {
       doc.full_name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSpecialty && matchesGender && matchesSearch;
   });
+
+  const handleClinicRatingSubmit = async () => {
+    if (!clinicId || clinicRatingSubmitting) return;
+
+    setClinicRatingSubmitError("");
+    setClinicRatingSubmitSuccess("");
+
+    if (clinicRatingValue < 1 || clinicRatingValue > 5) {
+      setClinicRatingSubmitError(
+        locale === "ar"
+          ? "برجاء اختيار تقييم من ١ إلى ٥."
+          : "Please select a rating from 1 to 5.",
+      );
+      return;
+    }
+
+    setClinicRatingSubmitting(true);
+
+    try {
+      const response = await fetch(`/api/ratings/clinic?id=${clinicId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          rating: clinicRatingValue,
+          comment: clinicRatingComment.trim() || undefined,
+        }),
+      });
+
+      const payload = await response.json();
+
+      if (
+        !response.ok ||
+        (isRecord(payload) &&
+          typeof payload.status === "string" &&
+          payload.status !== "success") ||
+        (isRecord(payload) && payload.success === false)
+      ) {
+        throw new Error(
+          getPayloadMessage(payload, "Failed to submit clinic rating"),
+        );
+      }
+
+      setClinicRatingSubmitSuccess(
+        locale === "ar"
+          ? "تم إرسال التقييم بنجاح."
+          : "Rating submitted successfully.",
+      );
+      setClinicRatingComment("");
+      setClinicRatingValue(0);
+      setClinicRatingsPage(1);
+      setClinicRatingsRefreshKey((prev) => prev + 1);
+    } catch (error: unknown) {
+      setClinicRatingSubmitError(
+        getErrorMessage(
+          error,
+          locale === "ar"
+            ? "تعذر إرسال التقييم."
+            : "Failed to submit rating.",
+        ),
+      );
+    } finally {
+      setClinicRatingSubmitting(false);
+    }
+  };
 
   if (profileLoading) {
     return (
@@ -448,19 +703,23 @@ export default function ClinicDetailsPage() {
           ) : (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filteredDoctors.slice(0, visibleDoctors).map((doc) => (
-                  <DoctorCard
-                    key={doc.staff_id}
-                    id={doc.staff_id}
-                    clinicId={clinic.clinic_id}
-                    name={doc.full_name}
-                    specialty={doc.specialist || ""}
-                    rating={ratingValue}
-                    price={doc.consultation_price}
-                    experience={0}
-                    imageSrc={doc.photo || ""}
-                  />
-                ))}
+                {filteredDoctors.slice(0, visibleDoctors).map((doc) => {
+                  const doctorRating = getSafeRating(doc.average_rating ?? 0);
+
+                  return (
+                    <DoctorCard
+                      key={doc.staff_id}
+                      id={doc.staff_id}
+                      clinicId={clinic.clinic_id}
+                      name={doc.full_name}
+                      specialty={doc.specialist || ""}
+                      rating={Number(doctorRating.toFixed(1))}
+                      price={doc.consultation_price}
+                      experience={doc.years_of_experience ?? 0}
+                      imageSrc={doc.photo || ""}
+                    />
+                  );
+                })}
               </div>
 
               {visibleDoctors < filteredDoctors.length && (
@@ -518,9 +777,157 @@ export default function ClinicDetailsPage() {
             </p>
           </div>
 
-          {ratingCount === 0 ? (
-            <p className="mt-8 text-center text-gray-400">No reviews yet.</p>
-          ) : null}
+          <div className="mt-10">
+            {clinicRatingsLoading ? (
+              <p className="text-center text-[#001A6E]">
+                {locale === "ar" ? "جاري تحميل التقييمات..." : "Loading ratings..."}
+              </p>
+            ) : clinicRatingsError ? (
+              <p className="text-center text-red-600">{clinicRatingsError}</p>
+            ) : clinicRatings.length === 0 ? (
+              <p className="text-center text-gray-400">
+                {locale === "ar"
+                  ? "لا توجد تقييمات بعد."
+                  : "No reviews yet."}
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+                {clinicRatings.map((review) => (
+                  <div
+                    key={review.rating_id}
+                    className="bg-linear-to-br from-blue-50 to-white border border-blue-100 p-6 rounded-3xl shadow-sm hover:shadow-md transition-shadow text-left"
+                  >
+                    <div className="flex gap-0.5 mb-3">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`w-4 h-4 ${
+                            i < Math.round(review.rating)
+                              ? "text-yellow-400 fill-yellow-400"
+                              : "text-gray-200"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <div className="mb-3 flex items-center gap-3">
+                      <div className="h-10 w-10 overflow-hidden rounded-full bg-[#eaf0fb]">
+                        {review.patient_photo ? (
+                          <img
+                            src={review.patient_photo}
+                            alt={review.patient_name || "Patient"}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : null}
+                      </div>
+                      <p className="text-xs font-semibold text-gray-500">
+                        {review.patient_name ||
+                          (locale === "ar" ? "مريض" : "Patient")}
+                      </p>
+                    </div>
+                    {review.comment ? (
+                      <p className="text-gray-600 text-sm leading-relaxed">
+                        &quot;{review.comment}&quot;
+                      </p>
+                    ) : (
+                      <p className="text-gray-400 text-sm">
+                        {locale === "ar" ? "بدون تعليق" : "No comment"}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {clinicRatingsTotalPages > 1 && (
+            <div className="mt-8 flex items-center justify-center gap-4">
+              <button
+                onClick={() =>
+                  setClinicRatingsPage((prev) => Math.max(1, prev - 1))
+                }
+                disabled={clinicRatingsPage <= 1}
+                className="rounded-full border border-[#dce5f6] px-4 py-2 text-sm font-semibold text-[#001A6E] disabled:opacity-50"
+              >
+                {locale === "ar" ? "السابق" : "Previous"}
+              </button>
+              <span className="text-sm text-gray-500">
+                {locale === "ar"
+                  ? `صفحة ${clinicRatingsPage} من ${clinicRatingsTotalPages}`
+                  : `Page ${clinicRatingsPage} of ${clinicRatingsTotalPages}`}
+              </span>
+              <button
+                onClick={() =>
+                  setClinicRatingsPage((prev) =>
+                    Math.min(clinicRatingsTotalPages, prev + 1),
+                  )
+                }
+                disabled={clinicRatingsPage >= clinicRatingsTotalPages}
+                className="rounded-full border border-[#dce5f6] px-4 py-2 text-sm font-semibold text-[#001A6E] disabled:opacity-50"
+              >
+                {locale === "ar" ? "التالي" : "Next"}
+              </button>
+            </div>
+          )}
+
+          <div className="mt-10 border-t border-[#e6ecf6] pt-8">
+            <h3 className="text-lg font-bold text-[#001A6E] mb-4">
+              {locale === "ar" ? "قيّم هذه العيادة" : "Rate this clinic"}
+            </h3>
+            <div className="mx-auto flex max-w-xl flex-col items-center gap-4">
+              <div className="flex items-center gap-1">
+                {[1, 2, 3, 4, 5].map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setClinicRatingValue(value)}
+                    className="transition-transform hover:scale-110"
+                  >
+                    <Star
+                      className={`h-6 w-6 ${
+                        value <= clinicRatingValue
+                          ? "text-[#f7b731] fill-[#f7b731]"
+                          : "text-[#d7deef]"
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+              <textarea
+                value={clinicRatingComment}
+                onChange={(event) => setClinicRatingComment(event.target.value)}
+                placeholder={
+                  locale === "ar"
+                    ? "اكتب تعليقك هنا (اختياري)"
+                    : "Write your comment (optional)"
+                }
+                rows={3}
+                className="w-full rounded-2xl border border-[#dce5f6] px-4 py-3 text-sm text-gray-600 outline-none focus:border-[#001A6E]"
+              />
+              {clinicRatingSubmitError ? (
+                <p className="text-sm text-red-600">
+                  {clinicRatingSubmitError}
+                </p>
+              ) : null}
+              {clinicRatingSubmitSuccess ? (
+                <p className="text-sm text-green-600">
+                  {clinicRatingSubmitSuccess}
+                </p>
+              ) : null}
+              <button
+                onClick={handleClinicRatingSubmit}
+                disabled={clinicRatingSubmitting}
+                className="rounded-2xl bg-[#001A6E] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-900/10 transition-colors hover:bg-[#162f80] disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {clinicRatingSubmitting
+                  ? locale === "ar"
+                    ? "جاري الإرسال..."
+                    : "Submitting..."
+                  : locale === "ar"
+                    ? "إرسال التقييم"
+                    : "Submit rating"}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

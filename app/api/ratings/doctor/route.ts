@@ -1,12 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ratingService } from "@/lib/api/ratings";
 import type { RatingRequest } from "@/lib/types/api";
+import { applyAuthCookies, getServerAccessToken } from "@/lib/api/server-auth";
+
+function getErrorStatus(error: unknown) {
+  return typeof error === "object" &&
+    error !== null &&
+    "status" in error &&
+    typeof error.status === "number"
+    ? error.status
+    : 500;
+}
+
+function isUnauthorized(error: unknown) {
+  return getErrorStatus(error) === 401;
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
 
 // POST /api/ratings/doctor?id=2
 export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get("authorization");
-    const token = authHeader?.replace("Bearer ", "");
+    let auth = await getServerAccessToken(request);
+    let token = auth.token || authHeader?.replace("Bearer ", "");
 
     if (!token) {
       return NextResponse.json(
@@ -43,24 +62,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const response = await ratingService.rateDoctor(
-      parseInt(doctorId),
-      body,
-      token
-    );
+    let response;
+    try {
+      response = await ratingService.rateDoctor(
+        parseInt(doctorId),
+        body,
+        token
+      );
+    } catch (error: unknown) {
+      if (!isUnauthorized(error)) throw error;
 
-    return NextResponse.json(
-      { success: true, data: response },
-      { status: 201 }
+      auth = await getServerAccessToken(request, { forceRefresh: true });
+      token = auth.token || authHeader?.replace("Bearer ", "");
+
+      if (!token) throw error;
+
+      response = await ratingService.rateDoctor(
+        parseInt(doctorId),
+        body,
+        token
+      );
+    }
+
+    return applyAuthCookies(
+      NextResponse.json({ success: true, data: response }, { status: 201 }),
+      auth
     );
   } catch (error: any) {
     console.error("Rate doctor error:", error);
     return NextResponse.json(
       {
         success: false,
-        error: error.message || "Failed to rate doctor",
+        error: getErrorMessage(error, "Failed to rate doctor"),
       },
-      { status: error.status || 500 }
+      { status: getErrorStatus(error) }
     );
   }
 }
@@ -70,6 +105,8 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const doctorId = searchParams.get("id");
+    const page = searchParams.get("page");
+    const limit = searchParams.get("limit");
 
     if (!doctorId) {
       return NextResponse.json(
@@ -81,17 +118,49 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const response = await ratingService.getDoctorRatings(parseInt(doctorId));
+    const authHeader = request.headers.get("authorization");
+    let auth = await getServerAccessToken(request);
+    let token = auth.token || authHeader?.replace("Bearer ", "");
 
-    return NextResponse.json({ success: true, data: response });
+    let response;
+
+    try {
+      response = await ratingService.getDoctorRatings(
+        parseInt(doctorId),
+        {
+          page: page ? Number(page) : undefined,
+          limit: limit ? Number(limit) : undefined,
+        },
+        token ?? undefined
+      );
+    } catch (error: unknown) {
+      if (!isUnauthorized(error)) throw error;
+
+      auth = await getServerAccessToken(request, { forceRefresh: true });
+      token = auth.token || authHeader?.replace("Bearer ", "");
+
+      response = await ratingService.getDoctorRatings(
+        parseInt(doctorId),
+        {
+          page: page ? Number(page) : undefined,
+          limit: limit ? Number(limit) : undefined,
+        },
+        token ?? undefined
+      );
+    }
+
+    return applyAuthCookies(
+      NextResponse.json({ success: true, data: response }),
+      auth
+    );
   } catch (error: any) {
     console.error("Get doctor ratings error:", error);
     return NextResponse.json(
       {
         success: false,
-        error: error.message || "Failed to fetch doctor ratings",
+        error: getErrorMessage(error, "Failed to fetch doctor ratings"),
       },
-      { status: error.status || 500 }
+      { status: getErrorStatus(error) }
     );
   }
 }

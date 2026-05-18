@@ -11,6 +11,7 @@ import { t } from "@/i18n";
 
 const DOCTOR_FALLBACK_IMAGE = "/images/blank-profile-picture.png";
 const API_BASE_URL = "http://127.0.0.1:3001/api";
+const RATINGS_PAGE_SIZE = 4;
 
 type DoctorProfileData = {
   id?: number;
@@ -39,6 +40,26 @@ type BookingSlot = {
 };
 
 type ApiRecord = Record<string, unknown>;
+
+type RatingsSummary = {
+  total_ratings: number;
+  average_rating: number;
+};
+
+type RatingsPagination = {
+  page: number;
+  limit: number;
+  total_pages: number;
+};
+
+type RatingItem = {
+  rating_id: number;
+  rating: number;
+  comment: string;
+  patient_name: string;
+  patient_photo: string;
+  created_at: string;
+};
 
 function isRecord(value: unknown): value is ApiRecord {
   return typeof value === "object" && value !== null;
@@ -78,6 +99,71 @@ function normalizeSlots(data: unknown): BookingSlot[] {
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
+}
+
+function getPayloadMessage(payload: unknown, fallback: string) {
+  if (!isRecord(payload)) return fallback;
+  const message = payload.message ?? payload.error;
+  return typeof message === "string" && message.trim() ? message : fallback;
+}
+
+function normalizeRatingItem(entry: unknown, index: number): RatingItem {
+  if (!isRecord(entry)) {
+    return {
+      rating_id: index + 1,
+      rating: 0,
+      comment: "",
+      patient_name: "",
+      patient_photo: "",
+      created_at: "",
+    };
+  }
+
+  return {
+    rating_id: Number(entry.rating_id ?? entry.id ?? index + 1),
+    rating: Number(entry.rating ?? 0),
+    comment: typeof entry.comment === "string" ? entry.comment : "",
+    patient_name:
+      typeof entry.patient_name === "string" ? entry.patient_name : "",
+    patient_photo:
+      typeof entry.patient_photo === "string" ? entry.patient_photo : "",
+    created_at: typeof entry.created_at === "string" ? entry.created_at : "",
+  };
+}
+
+function normalizeRatingsPayload(payload: unknown) {
+  const source =
+    isRecord(payload) && payload.data !== undefined ? payload.data : payload;
+  if (!isRecord(source)) return null;
+
+  const summarySource = isRecord(source.summary) ? source.summary : {};
+  const paginationSource = isRecord(source.pagination)
+    ? source.pagination
+    : {};
+  const ratingsSource = Array.isArray(source.ratings) ? source.ratings : [];
+
+  const summary: RatingsSummary = {
+    total_ratings: Number(
+      summarySource.total_ratings ?? summarySource.count ?? source.results ?? 0,
+    ),
+    average_rating: Number(
+      summarySource.average_rating ?? summarySource.avg_rating ?? 0,
+    ),
+  };
+
+  const pagination: RatingsPagination = {
+    page: Number(paginationSource.page ?? 1),
+    limit: Number(paginationSource.limit ?? RATINGS_PAGE_SIZE),
+    total_pages: Number(
+      paginationSource.total_pages ?? paginationSource.pages ?? 1,
+    ),
+  };
+
+  const ratings = ratingsSource.map((entry, index) =>
+    normalizeRatingItem(entry, index),
+  );
+
+  return { summary, pagination, ratings };
 }
 
 function formatDisplayDate(date: string, locale: string) {
@@ -140,6 +226,31 @@ function formatWorkingDays(value: string, locale: string) {
   return parts.join(", ");
 }
 
+function RatingStars({
+  rating,
+  className = "h-4 w-4",
+}: {
+  rating: number;
+  className?: string;
+}) {
+  const roundedRating = Math.round(rating);
+
+  return (
+    <div className="flex items-center gap-0.5">
+      {[...Array(5)].map((_, index) => (
+        <Star
+          key={index}
+          className={`${className} ${
+            index < roundedRating
+              ? "fill-[#f7b731] text-[#f7b731]"
+              : "text-[#d7deef]"
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
+
 export default function DoctorProfilePage() {
   const params = useParams();
   const router = useRouter();
@@ -158,6 +269,20 @@ export default function DoctorProfilePage() {
   const [slots, setSlots] = useState<BookingSlot[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [slotsError, setSlotsError] = useState("");
+  const [doctorRatings, setDoctorRatings] = useState<RatingItem[]>([]);
+  const [doctorRatingsSummary, setDoctorRatingsSummary] =
+    useState<RatingsSummary | null>(null);
+  const [doctorRatingsPage, setDoctorRatingsPage] = useState(1);
+  const [doctorRatingsTotalPages, setDoctorRatingsTotalPages] = useState(1);
+  const [doctorRatingsLoading, setDoctorRatingsLoading] = useState(false);
+  const [doctorRatingsError, setDoctorRatingsError] = useState("");
+  const [doctorRatingValue, setDoctorRatingValue] = useState(0);
+  const [doctorRatingComment, setDoctorRatingComment] = useState("");
+  const [doctorRatingSubmitting, setDoctorRatingSubmitting] = useState(false);
+  const [doctorRatingSubmitError, setDoctorRatingSubmitError] = useState("");
+  const [doctorRatingSubmitSuccess, setDoctorRatingSubmitSuccess] =
+    useState("");
+  const [doctorRatingsRefreshKey, setDoctorRatingsRefreshKey] = useState(0);
   const [validationModalData, setValidationModalData] = useState<{
     type: "success" | "warning";
     title: string;
@@ -174,6 +299,10 @@ export default function DoctorProfilePage() {
     window.addEventListener("localeChange", handleLocaleChange);
     return () => window.removeEventListener("localeChange", handleLocaleChange);
   }, []);
+
+  useEffect(() => {
+    setDoctorRatingsPage(1);
+  }, [doctorId]);
 
   useEffect(() => {
     async function loadProfile() {
@@ -256,11 +385,74 @@ export default function DoctorProfilePage() {
     loadSlots();
   }, [doctorId, selectedDate]);
 
+  useEffect(() => {
+    if (!doctorId) return;
+    let active = true;
+
+    async function loadDoctorRatings() {
+      setDoctorRatingsLoading(true);
+      setDoctorRatingsError("");
+
+      try {
+        const params = new URLSearchParams({
+          id: String(doctorId),
+          page: String(doctorRatingsPage),
+          limit: String(RATINGS_PAGE_SIZE),
+        });
+        const response = await fetch(
+          `/api/ratings/doctor?${params.toString()}`,
+          { credentials: "include" },
+        );
+        const payload = await response.json();
+
+        if (
+          !response.ok ||
+          (isRecord(payload) &&
+            typeof payload.status === "string" &&
+            payload.status !== "success") ||
+          (isRecord(payload) && payload.success === false)
+        ) {
+          throw new Error(
+            getPayloadMessage(payload, "Failed to load doctor ratings"),
+          );
+        }
+
+        const normalized = normalizeRatingsPayload(payload);
+        if (!active || !normalized) return;
+
+        setDoctorRatings(normalized.ratings);
+        setDoctorRatingsSummary(normalized.summary);
+        setDoctorRatingsTotalPages(normalized.pagination.total_pages || 1);
+      } catch (error: unknown) {
+        if (!active) return;
+        setDoctorRatingsError(
+          getErrorMessage(error, "Failed to load doctor ratings"),
+        );
+      } finally {
+        if (active) setDoctorRatingsLoading(false);
+      }
+    }
+
+    loadDoctorRatings();
+
+    return () => {
+      active = false;
+    };
+  }, [doctorId, doctorRatingsPage, doctorRatingsRefreshKey]);
+
   const doctorName = doctor?.full_name || "";
   const doctorSpecialist = doctor?.specialist || "";
-  const ratingValue = Number(doctor?.average_rating ?? doctor?.rating ?? 0);
-  const rating = Number.isFinite(ratingValue) ? ratingValue : 0;
-  const ratingCount = Number(doctor?.total_ratings ?? 0);
+  const baseRatingValue = Number(doctor?.average_rating ?? doctor?.rating ?? 0);
+  const baseRating = Number.isFinite(baseRatingValue) ? baseRatingValue : 0;
+  const baseRatingCount = Number(doctor?.total_ratings ?? 0);
+  const summaryRatingCount = doctorRatingsSummary?.total_ratings ?? 0;
+  const summaryRatingValue = Number(doctorRatingsSummary?.average_rating ?? 0);
+  const summaryRating = Number.isFinite(summaryRatingValue)
+    ? summaryRatingValue
+    : 0;
+  const hasSummary = doctorRatingsSummary !== null;
+  const rating = hasSummary ? summaryRating : baseRating;
+  const ratingCount = hasSummary ? summaryRatingCount : baseRatingCount;
   const canBeBooked =
     doctor?.can_be_booked !== false && doctor?.can_be_booked !== 0;
   const doctorImage =
@@ -288,6 +480,71 @@ export default function DoctorProfilePage() {
     }
 
     setShowTimePicker(true);
+  };
+
+  const handleDoctorRatingSubmit = async () => {
+    if (!doctorId || doctorRatingSubmitting) return;
+
+    setDoctorRatingSubmitError("");
+    setDoctorRatingSubmitSuccess("");
+
+    if (doctorRatingValue < 1 || doctorRatingValue > 5) {
+      setDoctorRatingSubmitError(
+        locale === "ar"
+          ? "برجاء اختيار تقييم من ١ إلى ٥."
+          : "Please select a rating from 1 to 5.",
+      );
+      return;
+    }
+
+    setDoctorRatingSubmitting(true);
+
+    try {
+      const response = await fetch(`/api/ratings/doctor?id=${doctorId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          rating: doctorRatingValue,
+          comment: doctorRatingComment.trim() || undefined,
+        }),
+      });
+
+      const payload = await response.json();
+
+      if (
+        !response.ok ||
+        (isRecord(payload) &&
+          typeof payload.status === "string" &&
+          payload.status !== "success") ||
+        (isRecord(payload) && payload.success === false)
+      ) {
+        throw new Error(
+          getPayloadMessage(payload, "Failed to submit doctor rating"),
+        );
+      }
+
+      setDoctorRatingSubmitSuccess(
+        locale === "ar"
+          ? "تم إرسال التقييم بنجاح."
+          : "Rating submitted successfully.",
+      );
+      setDoctorRatingComment("");
+      setDoctorRatingValue(0);
+      setDoctorRatingsPage(1);
+      setDoctorRatingsRefreshKey((prev) => prev + 1);
+    } catch (error: unknown) {
+      setDoctorRatingSubmitError(
+        getErrorMessage(
+          error,
+          locale === "ar"
+            ? "تعذر إرسال التقييم."
+            : "Failed to submit rating.",
+        ),
+      );
+    } finally {
+      setDoctorRatingSubmitting(false);
+    }
   };
 
   const handleBookingClick = async () => {
@@ -538,6 +795,185 @@ export default function DoctorProfilePage() {
             </div>
           </aside>
         </div>
+
+        <section className="mt-12 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl font-bold text-[#001A6E] mb-4">
+              {t("booking.patientReviews", locale)}
+            </h2>
+            <div className="flex flex-col items-center">
+              <div className="mb-3">
+                <RatingStars rating={rating} className="h-7 w-7" />
+              </div>
+              <p className="text-4xl font-extrabold text-[#001A6E]">
+                {rating.toFixed(1)}
+              </p>
+              <p className="font-bold text-lg text-gray-800">
+                {t("booking.overallRating", locale)}
+              </p>
+              <p className="text-gray-400 text-sm">
+                {ratingCount > 0
+                  ? t("clinics.fromVisitors", locale).replace(
+                      "{count}",
+                      String(ratingCount),
+                    )
+                  : t("booking.fromVisitors", locale)}
+              </p>
+            </div>
+          </div>
+
+          <div>
+            {doctorRatingsLoading ? (
+              <p className="text-center text-[#001A6E]">
+                {locale === "ar" ? "جاري تحميل التقييمات..." : "Loading ratings..."}
+              </p>
+            ) : doctorRatingsError ? (
+              <p className="text-center text-red-600">{doctorRatingsError}</p>
+            ) : doctorRatings.length === 0 ? (
+              <p className="text-center text-gray-400">
+                {locale === "ar"
+                  ? "لا توجد تقييمات بعد."
+                  : "No reviews yet."}
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+                {doctorRatings.map((review) => (
+                  <div
+                    key={review.rating_id}
+                    className="bg-linear-to-br from-blue-50 to-white border border-blue-100 p-6 rounded-3xl shadow-sm hover:shadow-md transition-shadow text-right"
+                  >
+                    <div className="flex gap-0.5 mb-3">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`w-4 h-4 ${
+                            i < Math.round(review.rating)
+                              ? "text-yellow-400 fill-yellow-400"
+                              : "text-gray-200"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <div className="mb-3 flex items-center justify-end gap-3">
+                      <p className="text-xs font-semibold text-gray-500">
+                        {review.patient_name ||
+                          (locale === "ar" ? "مريض" : "Patient")}
+                      </p>
+                      <div className="h-10 w-10 overflow-hidden rounded-full bg-[#eaf0fb]">
+                        {review.patient_photo ? (
+                          <img
+                            src={review.patient_photo}
+                            alt={review.patient_name || "Patient"}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : null}
+                      </div>
+                    </div>
+                    {review.comment ? (
+                      <p className="text-gray-600 text-sm leading-relaxed">
+                        &quot;{review.comment}&quot;
+                      </p>
+                    ) : (
+                      <p className="text-gray-400 text-sm">
+                        {locale === "ar" ? "بدون تعليق" : "No comment"}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {doctorRatingsTotalPages > 1 && (
+            <div className="mt-8 flex items-center justify-center gap-4">
+              <button
+                onClick={() =>
+                  setDoctorRatingsPage((prev) => Math.max(1, prev - 1))
+                }
+                disabled={doctorRatingsPage <= 1}
+                className="rounded-full border border-[#dce5f6] px-4 py-2 text-sm font-semibold text-[#001A6E] disabled:opacity-50"
+              >
+                {locale === "ar" ? "السابق" : "Previous"}
+              </button>
+              <span className="text-sm text-gray-500">
+                {locale === "ar"
+                  ? `صفحة ${doctorRatingsPage} من ${doctorRatingsTotalPages}`
+                  : `Page ${doctorRatingsPage} of ${doctorRatingsTotalPages}`}
+              </span>
+              <button
+                onClick={() =>
+                  setDoctorRatingsPage((prev) =>
+                    Math.min(doctorRatingsTotalPages, prev + 1),
+                  )
+                }
+                disabled={doctorRatingsPage >= doctorRatingsTotalPages}
+                className="rounded-full border border-[#dce5f6] px-4 py-2 text-sm font-semibold text-[#001A6E] disabled:opacity-50"
+              >
+                {locale === "ar" ? "التالي" : "Next"}
+              </button>
+            </div>
+          )}
+
+          <div className="mt-10 border-t border-[#e6ecf6] pt-8 text-center">
+            <h3 className="text-lg font-bold text-[#001A6E] mb-4">
+              {locale === "ar" ? "قيّم هذا الطبيب" : "Rate this doctor"}
+            </h3>
+            <div className="mx-auto flex max-w-xl flex-col items-center gap-4">
+              <div className="flex items-center gap-1">
+                {[1, 2, 3, 4, 5].map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setDoctorRatingValue(value)}
+                    className="transition-transform hover:scale-110"
+                  >
+                    <Star
+                      className={`h-6 w-6 ${
+                        value <= doctorRatingValue
+                          ? "text-[#f7b731] fill-[#f7b731]"
+                          : "text-[#d7deef]"
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+              <textarea
+                value={doctorRatingComment}
+                onChange={(event) => setDoctorRatingComment(event.target.value)}
+                placeholder={
+                  locale === "ar"
+                    ? "اكتب تعليقك هنا (اختياري)"
+                    : "Write your comment (optional)"
+                }
+                rows={3}
+                className="w-full rounded-2xl border border-[#dce5f6] px-4 py-3 text-sm text-gray-600 outline-none focus:border-[#001A6E]"
+              />
+              {doctorRatingSubmitError ? (
+                <p className="text-sm text-red-600">
+                  {doctorRatingSubmitError}
+                </p>
+              ) : null}
+              {doctorRatingSubmitSuccess ? (
+                <p className="text-sm text-green-600">
+                  {doctorRatingSubmitSuccess}
+                </p>
+              ) : null}
+              <button
+                onClick={handleDoctorRatingSubmit}
+                disabled={doctorRatingSubmitting}
+                className="rounded-2xl bg-[#001A6E] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-900/10 transition-colors hover:bg-[#162f80] disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {doctorRatingSubmitting
+                  ? locale === "ar"
+                    ? "جاري الإرسال..."
+                    : "Submitting..."
+                  : locale === "ar"
+                    ? "إرسال التقييم"
+                    : "Submit rating"}
+              </button>
+            </div>
+          </div>
+        </section>
 
         {showDatePicker && (
           <DatePicker

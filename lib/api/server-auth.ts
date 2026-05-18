@@ -46,8 +46,13 @@ export async function getServerAccessToken(
   options: { forceRefresh?: boolean } = {}
 ): Promise<TokenPayload> {
   const authHeader = request.headers.get("authorization");
-  const accessToken =
-    request.cookies.get("jwt")?.value || authHeader?.replace("Bearer ", "");
+  const cookieToken =
+    request.cookies.get("jwt")?.value ||
+    request.cookies.get("access_token")?.value ||
+    request.cookies.get("access")?.value ||
+    request.cookies.get("accessToken")?.value ||
+    request.cookies.get("token")?.value;
+  const accessToken = cookieToken || authHeader?.replace("Bearer ", "");
 
   if (accessToken && !options.forceRefresh) {
     return { token: accessToken, setCookies: [] };
