@@ -7,7 +7,9 @@ import Footer from "@/components/footer/footer";
 export default function AppChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isDashboardRoute =
-    pathname.startsWith("/dashboard") || pathname.startsWith("/doctorDash");
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/doctorDash") ||
+    pathname.startsWith("/clinicDash");
   const isAuthRoute =
     pathname.startsWith("/login") ||
     pathname.startsWith("/register") ||

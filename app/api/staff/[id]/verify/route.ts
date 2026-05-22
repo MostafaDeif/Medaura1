@@ -1,35 +1,53 @@
 import { NextRequest, NextResponse } from "next/server";
 import { staffService } from "@/lib/api/staff";
+import { getServerAccessToken, applyAuthCookies } from "@/lib/api/server-auth";
 
-export async function PATCH(request: NextRequest) {
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
+function getErrorStatus(error: unknown) {
+  return typeof error === "object" &&
+    error !== null &&
+    "status" in error &&
+    typeof error.status === "number"
+    ? error.status
+    : 500;
+}
+
+// PATCH /api/staff/[id]/verify
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const authHeader = request.headers.get("authorization");
-    const token = authHeader?.replace("Bearer ", "");
+    const auth = await getServerAccessToken(request);
 
-    if (!token) {
+    if (!auth.token) {
       return NextResponse.json(
-        { success: false, error: "Missing authorization token" },
+        { success: false, error: "Unauthorized – please log in" },
         { status: 401 }
       );
     }
 
-    const segments = request.nextUrl.pathname.split("/").filter(Boolean);
-    const staffId = segments[segments.length - 2];
+    const { id } = await params;
+    const staffId = parseInt(id, 10);
 
-    if (!staffId) {
+    if (isNaN(staffId)) {
       return NextResponse.json(
-        { success: false, error: "Missing staff ID" },
+        { success: false, error: "Invalid staff ID" },
         { status: 400 }
       );
     }
 
-    const response = await staffService.verify(parseInt(staffId), token);
-    return NextResponse.json({ success: true, data: response });
-  } catch (error: any) {
+    const data = await staffService.verify(staffId, auth.token);
+    const res = NextResponse.json({ success: true, data });
+    return applyAuthCookies(res, auth);
+  } catch (error: unknown) {
     console.error("Verify staff error:", error);
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to verify staff" },
-      { status: error.status || 500 }
+      { success: false, error: getErrorMessage(error, "Failed to verify staff") },
+      { status: getErrorStatus(error) }
     );
   }
 }

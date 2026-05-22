@@ -9,6 +9,43 @@ import type {
   ApiResponse,
 } from "@/lib/types/api";
 
+type PatchCandidate = {
+  endpoint: string;
+  body?: unknown;
+};
+
+function getErrorStatus(error: unknown) {
+  return typeof error === "object" &&
+    error !== null &&
+    "status" in error &&
+    typeof error.status === "number"
+    ? error.status
+    : undefined;
+}
+
+async function patchFirstAvailable<T>(
+  candidates: PatchCandidate[],
+  token: string,
+) {
+  let lastError: unknown;
+
+  for (const candidate of candidates) {
+    try {
+      return await apiClient.patch<T>(candidate.endpoint, candidate.body, {
+        token,
+      });
+    } catch (error: unknown) {
+      const status = getErrorStatus(error);
+      if (status !== 404 && status !== 405) {
+        throw error;
+      }
+      lastError = error;
+    }
+  }
+
+  throw lastError;
+}
+
 export const adminService = {
   async listDoctors(token: string) {
     const res = await apiClient.get<
@@ -131,26 +168,43 @@ export const adminService = {
   },
 
   async approveClinic(clinicId: number, token: string) {
-    return apiClient.patch(
-      `/api/admin/clinics/${clinicId}/approve`,
-      undefined,
-      { token }
+    return patchFirstAvailable<unknown>(
+      [
+        { endpoint: `/api/admin/clinics/${clinicId}/approve` },
+        { endpoint: `/api/admin/clinics/${clinicId}/verify` },
+        {
+          endpoint: `/api/admin/clinics/${clinicId}`,
+          body: { verified: true, status: "approved" },
+        },
+      ],
+      token,
     );
   },
 
   async rejectClinic(clinicId: number, token: string) {
-    return apiClient.patch(
-      `/api/admin/clinics/${clinicId}/reject`,
-      undefined,
-      { token }
+    return patchFirstAvailable<unknown>(
+      [
+        { endpoint: `/api/admin/clinics/${clinicId}/reject` },
+        { endpoint: `/api/admin/clinics/${clinicId}/unverify` },
+        {
+          endpoint: `/api/admin/clinics/${clinicId}`,
+          body: { verified: false, status: "rejected" },
+        },
+      ],
+      token,
     );
   },
 
   async unverifyClinic(clinicId: number, token: string) {
-    return apiClient.patch(
-      `/api/admin/clinics/${clinicId}/unverify`,
-      undefined,
-      { token }
+    return patchFirstAvailable<unknown>(
+      [
+        { endpoint: `/api/admin/clinics/${clinicId}/unverify` },
+        {
+          endpoint: `/api/admin/clinics/${clinicId}`,
+          body: { verified: false, status: "pending" },
+        },
+      ],
+      token,
     );
   },
 

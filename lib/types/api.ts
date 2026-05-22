@@ -129,6 +129,20 @@ export interface ClinicStats {
   pending_staff: number;
 }
 
+export interface ClinicMyStats {
+  clinic_name?: string;
+  total_staff: number;
+  pending_staff: number;
+  total_bookings: number;
+  total_doctors?: number;
+  confirmed_bookings?: number;
+  cancelled_bookings?: number;
+  pending_bookings?: number;
+  monthly_bookings?: { month: string; count: number }[];
+  weekly_bookings?: { day: string; count: number }[];
+  staff_by_specialty?: { specialty: string; count: number }[];
+}
+
 export interface ClinicBooking {
   id: number;
   doctor_id: number;

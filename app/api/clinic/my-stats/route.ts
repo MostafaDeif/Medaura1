@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { staffService } from "@/lib/api/staff";
+import { clinicService } from "@/lib/api/clinic";
 import { getServerAccessToken, applyAuthCookies } from "@/lib/api/server-auth";
 
-// GET /api/staff/pending
+// GET /api/clinic/my-stats
 export async function GET(request: NextRequest) {
   try {
     const auth = await getServerAccessToken(request);
@@ -14,13 +14,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const data = await staffService.getPendingStaff(auth.token);
+    const data = await clinicService.getMyStats(auth.token);
     const res = NextResponse.json({ success: true, data });
     return applyAuthCookies(res, auth);
   } catch (error: any) {
-    console.error("Get pending staff error:", error);
+    console.error("Get clinic my-stats error:", error);
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to fetch pending staff" },
+      { success: false, error: error.message || "Failed to fetch clinic statistics" },
       { status: error.status || 500 }
     );
   }

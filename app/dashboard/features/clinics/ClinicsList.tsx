@@ -76,16 +76,41 @@ function normalizeClinics(list: Clinic[]) {
   return list.map(normalizeClinic);
 }
 
-function extractClinics(payload: any): Clinic[] {
+function extractClinics(payload: unknown): Clinic[] {
   if (Array.isArray(payload)) return payload as Clinic[];
-  if (!payload) return [];
+  if (!payload || typeof payload !== "object") return [];
 
-  if (Array.isArray(payload.data)) return payload.data as Clinic[];
-  if (Array.isArray(payload.clinics)) return payload.clinics as Clinic[];
-  if (Array.isArray(payload.data?.clinics))
-    return payload.data.clinics as Clinic[];
+  const record = payload as {
+    data?: unknown;
+    clinics?: unknown;
+  };
+  const data = record.data as { clinics?: unknown } | undefined;
+
+  if (Array.isArray(record.data)) return record.data as Clinic[];
+  if (Array.isArray(record.clinics)) return record.clinics as Clinic[];
+  if (Array.isArray(data?.clinics)) return data.clinics as Clinic[];
 
   return [];
+}
+
+type ApiResult = {
+  success?: boolean;
+  error?: string;
+  message?: string;
+};
+
+async function readApiResult(response: Response): Promise<ApiResult> {
+  const contentType = response.headers.get("content-type") || "";
+
+  if (!contentType.includes("application/json")) {
+    return {};
+  }
+
+  try {
+    return (await response.json()) as ApiResult;
+  } catch {
+    return {};
+  }
 }
 
 export default function ClinicsList({
@@ -102,7 +127,7 @@ export default function ClinicsList({
 
   useEffect(() => {
     if (clinicsProp) {
-      setClinics(normalizeClinics(clinicsProp));
+      queueMicrotask(() => setClinics(normalizeClinics(clinicsProp)));
     }
   }, [clinicsProp]);
 
@@ -124,8 +149,7 @@ export default function ClinicsList({
         const allClinics = extractClinics(allPayload);
 
         const withStatus = allClinics.map((clinic) => {
-          const id = getClinicId(clinic);
-          let status = clinic.status;
+          const status = clinic.status;
 
           return { ...clinic, status };
         });
@@ -160,18 +184,21 @@ export default function ClinicsList({
     setLoadingId(id);
 
     try {
-      const endpoint = approve
-        ? `/api/admin/clinics/${id}/approve`
-        : `/api/admin/clinics/${id}/reject`;
+      const action = approve ? "approve" : "reject";
+      const endpoint = `/api/admin/clinics?clinic_id=${id}&action=${action}`;
 
       const response = await fetch(endpoint, {
         method: "PATCH",
         credentials: "include",
       });
 
-      const result = await response.json();
+      const result = await readApiResult(response);
 
-      if (!response.ok) throw new Error(result.message);
+      if (!response.ok || result.success === false) {
+        throw new Error(
+          result.error || result.message || "Failed to update clinic status",
+        );
+      }
 
       setClinics((prev) =>
         prev.map((item) =>

@@ -3,6 +3,7 @@ import type {
   ClinicRequest,
   ClinicProfile,
   ClinicStats,
+  ClinicMyStats,
   ClinicBooking,
   BookingRequest,
   BookingResponse,
@@ -28,6 +29,10 @@ export const clinicService = {
 
   async getStats(token: string) {
     return apiClient.get<ClinicStats>("/clinic/stats", { token });
+  },
+
+  async getMyStats(token: string) {
+    return apiClient.get<ClinicMyStats>("/api/clinic/my-stats", { token });
   },
 
   async getStaff(token: string) {

@@ -35,6 +35,26 @@ interface Clinic {
 
 type FilterType = "all" | "pending" | "approved" | "rejected";
 
+type ApiResult = {
+  success?: boolean;
+  error?: string;
+  message?: string;
+};
+
+async function readApiResult(response: Response): Promise<ApiResult> {
+  const contentType = response.headers.get("content-type") || "";
+
+  if (!contentType.includes("application/json")) {
+    return {};
+  }
+
+  try {
+    return (await response.json()) as ApiResult;
+  } catch {
+    return {};
+  }
+}
+
 export default function ClinicRequests() {
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,34 +67,51 @@ export default function ClinicRequests() {
   });
 
   useEffect(() => {
-    loadClinics();
-  }, []);
+    let active = true;
 
-  async function loadClinics() {
-    try {
-      const res = await fetch("/api/admin/clinics", { credentials: "include" });
-      const data = await res.json();
-      setClinics(data.clinics || data.data || []);
-    } catch {
-      setClinics([]);
-    } finally {
-      setLoading(false);
+    async function loadClinics() {
+      try {
+        const res = await fetch("/api/admin/clinics", { credentials: "include" });
+        const data = await res.json();
+        if (active) setClinics(data.clinics || data.data || []);
+      } catch {
+        if (active) setClinics([]);
+      } finally {
+        if (active) setLoading(false);
+      }
     }
-  }
+
+    void loadClinics();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   async function handleStatus(
     clinicId: number,
     newStatus: "approved" | "rejected" | "pending",
   ) {
     try {
-      const endpoint =
+      const action =
         newStatus === "approved"
-          ? `/api/admin/clinics/${clinicId}/approve`
+          ? "approve"
           : newStatus === "pending"
-            ? `/api/admin/clinics/${clinicId}/unverify`
-            : `/api/admin/clinics/${clinicId}/reject`;
+            ? "unverify"
+            : "reject";
+      const endpoint = `/api/admin/clinics?clinic_id=${clinicId}&action=${action}`;
 
-      await fetch(endpoint, { method: "PATCH", credentials: "include" });
+      const response = await fetch(endpoint, {
+        method: "PATCH",
+        credentials: "include",
+      });
+      const result = await readApiResult(response);
+
+      if (!response.ok || result.success === false) {
+        throw new Error(
+          result.error || result.message || "Failed to update clinic status",
+        );
+      }
 
       setClinics((prev) =>
         prev.map((c) =>

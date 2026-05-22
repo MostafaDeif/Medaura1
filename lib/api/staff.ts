@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import type { StaffProfile, StaffVerifyRequest, StaffCreateRequest } from "@/lib/types/api";
+import type { StaffProfile, StaffCreateRequest } from "@/lib/types/api";
 
 export const staffService = {
   async getProfile(staffId: number) {
@@ -19,7 +19,7 @@ export const staffService = {
   },
 
   async verify(staffId: number, token: string) {
-    return apiClient.patch<any>(
+    return apiClient.patch<unknown>(
       `/api/staff/${staffId}/verify`,
       undefined,
       { token }
