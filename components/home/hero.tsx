@@ -7,14 +7,32 @@ import { useEffect, useState } from "react";
 import { t } from "@/i18n";
 import { motion } from "framer-motion";
 
-const stats = (locale: string) => [
+const API_URL = "http://127.0.0.1:3001/api/user/stats";
+
+type StatsData = {
+  totalDoctors: number;
+  totalPatients: number;
+  totalClinics: number;
+  totalMedicalUsers: number;
+};
+
+async function getAdminStats() {
+  const response = await fetch(API_URL);
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch stats");
+  }
+
+  return response.json();
+}
+const stats = (locale: string, statsData: StatsData) => [
   {
-    value: "+10k",
+    value: `+${statsData.totalPatients}`,
     label: t("hero.stats.happyPatients", locale),
     icon: <Users className="h-5 w-5" />,
   },
   {
-    value: "+500",
+    value: `+${statsData.totalDoctors}`,
     label: t("hero.stats.licensedDoctors", locale),
     icon: <Stethoscope className="h-5 w-5" />,
   },
@@ -27,6 +45,26 @@ const stats = (locale: string) => [
 
 export default function Hero() {
   const [locale, setLocale] = useState("ar");
+  const [statsData, setStatsData] = useState<StatsData>({
+    totalDoctors: 0,
+    totalPatients: 0,
+    totalClinics: 0,
+    totalMedicalUsers: 0,
+  });
+
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const data = await getAdminStats();
+
+        setStatsData(data.data);
+      } catch (error) {
+        console.log("Stats fetch error:", error);
+      }
+    }
+
+    loadStats();
+  }, []);
 
   useEffect(() => {
     function onLocale(e: any) {
@@ -71,10 +109,8 @@ export default function Hero() {
 
       <div className="relative z-10 mx-auto max-w-6xl">
         <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
-
           {/* LEFT */}
           <div className="space-y-6 text-[#0f1a4f]">
-
             <motion.p
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -161,7 +197,7 @@ export default function Hero() {
           }}
           className="mt-8 grid gap-4 rounded-3xl border border-[#d6e0ff] bg-white/95 p-4 sm:grid-cols-3 sm:p-5"
         >
-          {stats(locale).map((stat) => (
+          {stats(locale, statsData).map((stat) => (
             <motion.div
               key={stat.label}
               initial={{ opacity: 0, y: 30 }}
@@ -183,7 +219,6 @@ export default function Hero() {
         {/* SEARCH */}
         <div className="mt-6 rounded-3xl border border-[#d7e1ff] bg-white p-4 sm:p-5">
           <div className="grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto] md:items-center">
-
             <select className="h-12 rounded-2xl border border-[#d6e0ff] px-4 text-sm text-[#0f1a4f] outline-none focus:border-[#1c4fe0]">
               <option>{t("hero.select.specialty", locale)}</option>
               <option>Cardiology</option>
@@ -208,10 +243,8 @@ export default function Hero() {
               <Search className="h-4 w-4" />
               {t("hero.search", locale)}
             </button>
-
           </div>
         </div>
-
       </div>
     </motion.section>
   );
