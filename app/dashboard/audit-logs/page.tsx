@@ -145,10 +145,22 @@ function getActorEmail(log: AuditLog) {
   return null;
 }
 
+function safeDecode(val?: string | null): string {
+  if (!val) return "";
+  try {
+    return decodeURIComponent(val);
+  } catch {
+    return val;
+  }
+}
+
 function getLocationString(log: AuditLog) {
   const loc = log.ip_location;
   if (!loc) return null;
-  const parts = [loc.city, loc.region, loc.country].filter(Boolean);
+  const city = safeDecode(loc.city);
+  const region = safeDecode(loc.region);
+  const country = safeDecode(loc.country);
+  const parts = [city, region, country].filter(Boolean);
   return parts.length ? parts.join(", ") : null;
 }
 
@@ -1089,9 +1101,9 @@ function ExpandedDetail({ log, role }: { log: AuditLog; role: string }) {
             <InfoRow label="IP Address" value={log.ip || "—"} mono />
             {hasLocation ? (
               <>
-                {loc.city && <InfoRow label="City" value={loc.city} />}
-                {loc.region && <InfoRow label="Region" value={loc.region} />}
-                {loc.country && <InfoRow label="Country" value={loc.country} />}
+                {loc.city && <InfoRow label="City" value={safeDecode(loc.city)} />}
+                {loc.region && <InfoRow label="Region" value={safeDecode(loc.region)} />}
+                {loc.country && <InfoRow label="Country" value={safeDecode(loc.country)} />}
                 {loc.latitude != null && loc.longitude != null && (
                   <InfoRow
                     label="Coordinates"

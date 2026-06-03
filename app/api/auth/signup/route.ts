@@ -23,7 +23,6 @@ export async function POST(request: NextRequest) {
 
       if (
         !profile?.full_name ||
-        !profile.license_number ||
         !profile.specialist ||
         !profile.work_days ||
         !profile.work_from ||
@@ -34,7 +33,7 @@ export async function POST(request: NextRequest) {
           {
             success: false,
             error:
-              "Missing required doctor profile fields: full_name, license_number, specialist, work_days, work_from, work_to, consultation_price",
+              "Missing required doctor profile fields: full_name, specialist, work_days, work_from, work_to, consultation_price",
           },
           { status: 400 }
         );

@@ -7,12 +7,12 @@ export interface PatientSignupProfile {
 
 export interface DoctorSignupProfile {
   full_name: string;
-  license_number: string;
   specialist: string;
   work_days: string;
   work_from: string;
   work_to: string;
   consultation_price: number;
+  licence?: string; // Cloudinary URL — added via profile update, not signup
 }
 
 export interface ClinicSignupProfile {
@@ -292,6 +292,7 @@ export interface AdminDoctorsList {
   email: string;
   specialist: string;
   verified: boolean;
+  licence?: string;
 }
 
 export interface AdminClinicsList {
@@ -299,6 +300,7 @@ export interface AdminClinicsList {
   name: string;
   location: string;
   verified: boolean;
+  licence?: string;
 }
 
 export interface AdminStaffList {

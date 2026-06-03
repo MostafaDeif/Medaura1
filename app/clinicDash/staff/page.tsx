@@ -47,6 +47,19 @@ async function verifyStaff(id: number): Promise<void> {
   if (!res.ok || !json.success) throw new Error(json.error || "فشل التوثيق");
 }
 
+async function unverifyStaff(id: number): Promise<void> {
+  if (!Number.isInteger(id) || id <= 0) {
+    throw new Error("Invalid staff ID");
+  }
+
+  const res = await fetch(`/api/staff/${id}/unverify`, {
+    method: "PATCH",
+    credentials: "include",
+  });
+  const json = await res.json();
+  if (!res.ok || !json.success) throw new Error(json.error || "فشل إلغاء التوثيق");
+}
+
 export default function StaffPage() {
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,6 +96,31 @@ export default function StaffPage() {
           : m
       )
     );
+  };
+
+  const handleUnverify = async (id: number) => {
+    const staffId = getStaffId({ id });
+
+    if (staffId === null) {
+      console.error("Invalid staff ID");
+      return;
+    }
+
+    await unverifyStaff(staffId);
+    setStaff((prev) =>
+      prev.map((m) =>
+        getStaffId(m) === staffId
+          ? { ...m, id: staffId, verified: false, is_verified: false }
+          : m
+      )
+    );
+  };
+
+  const handleDelete = async (id: number) => {
+    const staffId = getStaffId({ id });
+    if (staffId === null) return;
+    console.warn("Delete staff is not supported on the backend for clinic owners", staffId);
+    alert("حذف الموظفين غير مدعوم حالياً.");
   };
 
   const doctors = useMemo(
@@ -221,6 +259,8 @@ export default function StaffPage() {
             staff={filteredDoctors}
             loading={loading}
             onVerify={handleVerify}
+            onUnverify={handleUnverify}
+            onDelete={handleDelete}
           />
         </div>
       </div>

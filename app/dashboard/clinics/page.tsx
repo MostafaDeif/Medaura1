@@ -31,6 +31,7 @@ interface Clinic {
   average_rating: number;
   created_at?: string;
   license?: string;
+  licence?: string;
 }
 
 type FilterType = "all" | "pending" | "approved" | "rejected";
@@ -463,7 +464,15 @@ function ClinicDetail({
           sub={clinic.owner_email || clinic.email}
         />
         <DocRow label="الموقع" sub={clinic.location} />
-        <DocRow label="رقم الترخيص" sub={clinic.license || "—"} />
+        {clinic.licence ? (
+          <DocRow
+            label="مستند الترخيص المهني"
+            sub="مستند ترخيص العيادة (صورة/PDF)"
+            url={clinic.licence}
+          />
+        ) : (
+          <DocRow label="مستند الترخيص" sub={clinic.license || "—"} />
+        )}
       </Section>
 
       {/* Actions */}
@@ -552,16 +561,28 @@ function InfoRow({
   );
 }
 
-function DocRow({ label, sub }: { label: string; sub: string }) {
+function DocRow({ label, sub, url }: { label: string; sub: string; url?: string }) {
   return (
-    <div className="flex items-center gap-2.5 px-3.5 py-2.5 border-b border-gray-50 last:border-b-0">
-      <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-        <Check size={11} className="text-green-700" />
+    <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-gray-50 last:border-b-0 gap-2">
+      <div className="flex items-center gap-2.5">
+        <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+          <Check size={11} className="text-green-700" />
+        </div>
+        <div>
+          <p className="text-xs font-medium text-gray-900">{label}</p>
+          <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>
+        </div>
       </div>
-      <div>
-        <p className="text-xs font-medium text-gray-900">{label}</p>
-        <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>
-      </div>
+      {url && (
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-lg bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition-colors flex-shrink-0"
+        >
+          عرض
+        </a>
+      )}
     </div>
   );
 }

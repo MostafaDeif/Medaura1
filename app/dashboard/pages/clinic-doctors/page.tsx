@@ -123,14 +123,18 @@ export default function ClinicDoctorsPage() {
       });
       const result = await response.json();
 
-      if (result.success) {
-        const normalized = (result.data || []).map((s: any) => ({
+      const isSuccess = result.success === true || result.status === "success";
+      const staffList = result.data || result.staff || [];
+
+      if (isSuccess) {
+        const normalized = staffList.map((s: any) => ({
           ...s,
+          role_title: s.role_title || "doctor",
           phone: s.phone ?? s.profile?.phone ?? null,
         }));
         setStaff(normalized);
       } else {
-        throw new Error(result.error || "فشل تحميل البيانات");
+        throw new Error(result.error || result.message || "فشل تحميل البيانات");
       }
     } catch (err: any) {
       setError(err.message || "حدث خطأ أثناء تحميل أطباء العيادات");

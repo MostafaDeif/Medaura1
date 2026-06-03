@@ -6,6 +6,7 @@ import {
   AlertTriangle,
   Camera,
   CheckCircle2,
+  FileText,
   Loader,
   MapPin,
   Save,
@@ -42,6 +43,7 @@ type ClinicProfileData = {
   } | null;
   latitude?: number | string | null;
   longitude?: number | string | null;
+  licence?: string | null;
 };
 
 type ClinicEditableProfile = {
@@ -54,6 +56,7 @@ type ClinicEditableProfile = {
     latitude: number | "";
     longitude: number | "";
   };
+  licence: string;
 };
 
 type MessageState = {
@@ -179,6 +182,7 @@ function buildInitialProfile(
         profile?.geo_location?.longitude ?? profile?.longitude,
       ),
     },
+    licence: toTrimmedString(profile?.licence),
   };
 }
 
@@ -213,6 +217,8 @@ export default function SettingsPage() {
     useState<ClinicEditableProfile | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState("");
+  const [licenceFile, setLicenceFile] = useState<File | null>(null);
+  const [licenceFileName, setLicenceFileName] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<MessageState | null>(null);
   const initializedRef = useRef<number | null>(null);
@@ -291,6 +297,7 @@ export default function SettingsPage() {
   const longitudeChanged =
     normalizedCurrent.longitude !== normalizedInitial.longitude;
 
+  const licenceChanged = Boolean(licenceFile);
   const hasChanges =
     nameChanged ||
     addressChanged ||
@@ -299,6 +306,7 @@ export default function SettingsPage() {
     hoursChanged ||
     latitudeChanged ||
     longitudeChanged ||
+    licenceChanged ||
     Boolean(photoFile);
 
   const requiresReverify = hasChanges;
@@ -327,11 +335,20 @@ export default function SettingsPage() {
     setPhotoPreview(URL.createObjectURL(file));
   };
 
+  const handleLicenceChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setLicenceFile(file);
+    setLicenceFileName(file.name);
+  };
+
   const handleReset = () => {
     if (!initialSnapshot) return;
     setFormData(initialSnapshot);
     setPhotoFile(null);
     setPhotoPreview(initialPhotoRef.current);
+    setLicenceFile(null);
+    setLicenceFileName("");
     setMessage(null);
   };
 
@@ -368,6 +385,10 @@ export default function SettingsPage() {
         body.append("photo", photoFile);
       }
 
+      if (licenceFile) {
+        body.append("licence", licenceFile);
+      }
+
       const response = await fetch("/api/user/me", {
         method: "PATCH",
         credentials: "include",
@@ -393,6 +414,7 @@ export default function SettingsPage() {
         location: payload.location,
         phone: payload.phone,
         opening_hours: payload.opening_hours,
+        licence: (updatedProfile?.licence as string | undefined) || (user?.profile as ClinicProfileData)?.licence || null,
         geo_location: {
           latitude:
             formData.geo_location.latitude === ""
@@ -415,6 +437,8 @@ export default function SettingsPage() {
       setFormData(nextSnapshot);
       setInitialSnapshot(nextSnapshot);
       setPhotoFile(null);
+      setLicenceFile(null);
+      setLicenceFileName("");
 
       const resolvedPhoto =
         updatedPhoto || (photoFile ? photoPreview : initialPhotoRef.current);
@@ -735,6 +759,49 @@ export default function SettingsPage() {
             <span className="text-xs text-(--text-secondary)">
               JPG أو PNG بحجم مناسب.
             </span>
+          </div>
+
+          <div className="space-y-3 pt-4 border-t border-(--card-border)">
+            <h3 className="text-sm font-semibold text-(--text-primary)">
+              مستند الترخيص المهني
+            </h3>
+            <p className="text-xs text-(--text-secondary)">
+              يرجى رفع ترخيص العيادة الطبي كملف PDF أو صورة. هذا الحقل اختياري ويمكنك تحديثه لاحقاً.
+            </p>
+            {formData.licence && (
+              <div className="text-xs">
+                <a
+                  href={formData.licence}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-teal-600 hover:text-teal-700 font-semibold underline"
+                >
+                  <FileText size={14} />
+                  عرض مستند الترخيص الحالي
+                </a>
+              </div>
+            )}
+            <label className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-(--card-border) bg-(--semi-card-bg) px-4 py-3 text-sm text-(--text-primary) transition hover:border-teal-400 hover:bg-teal-50/40">
+              <FileText size={16} className="text-teal-500 shrink-0" />
+              <span className="truncate max-w-xs text-xs">
+                {licenceFileName || "اختر ملف PDF أو صورة"}
+              </span>
+              <input
+                type="file"
+                accept="image/*,application/pdf"
+                onChange={handleLicenceChange}
+                className="hidden"
+              />
+            </label>
+            {licenceFileName && (
+              <button
+                type="button"
+                onClick={() => { setLicenceFile(null); setLicenceFileName(""); }}
+                className="text-xs text-red-500 hover:underline block"
+              >
+                إلغاء الملف المختار
+              </button>
+            )}
           </div>
 
           <div className="space-y-3 pt-2">

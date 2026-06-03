@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useState } from "react";
-import { Camera, Loader, MapPin, Save, X } from "lucide-react";
+import { Camera, FileText, Loader, MapPin, Save, X } from "lucide-react";
 
 type GeoLocation = {
   latitude: number | "";
@@ -22,6 +22,7 @@ export type DoctorEditableProfile = {
   work_days: string;
   location: string;
   geo_location: GeoLocation;
+  specialist: string;
 };
 
 type EditProfileFormProps = {
@@ -29,6 +30,21 @@ type EditProfileFormProps = {
   initialData: DoctorEditableProfile;
   onSuccess?: (profile: Record<string, unknown>) => void;
 };
+
+const SPECIALTIES = [
+  "مخ واعصاب",
+  "عظام",
+  "الأورام",
+  "طب الأذن والأنف والحنجرة",
+  "طب العيون",
+  "قلب و اوعية دموية",
+  "صدر و جهاز تنفسي",
+  "كلى",
+  "اسنان",
+  "اطفال و حديثي الولادة",
+  "جلدية",
+  "نسا و توليد",
+];
 
 const GeoLocationPicker = dynamic(() => import("./GeoLocationPicker"), {
   ssr: false,
@@ -122,6 +138,7 @@ function buildRequestPayload(formData: DoctorEditableProfile) {
     work_to: formData.work_to,
     work_days: formData.work_days,
     location: toNullableString(formData.location),
+    specialist: toNullableString(formData.specialist),
 
     latitude: String(formData.geo_location.latitude),
     longitude: String(formData.geo_location.longitude),
@@ -146,6 +163,8 @@ export default function EditProfileForm({
   const [success, setSuccess] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState(initialData.photo || "");
+  const [licenceFile, setLicenceFile] = useState<File | null>(null);
+  const [licenceFileName, setLicenceFileName] = useState<string>("");
   const [formData, setFormData] = useState<DoctorEditableProfile>({
     photo: initialData.photo,
     full_name: initialData.full_name,
@@ -158,6 +177,7 @@ export default function EditProfileForm({
     work_days: initialData.work_days,
     location: initialData.location,
     phone: initialData.phone,
+    specialist: initialData.specialist || "",
     geo_location: {
       latitude:
         initialData.geo_location.latitude === ""
@@ -203,6 +223,13 @@ export default function EditProfileForm({
     setPhotoPreview(URL.createObjectURL(file));
   };
 
+  const handleLicenceChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setLicenceFile(file);
+    setLicenceFileName(file.name);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -221,6 +248,10 @@ export default function EditProfileForm({
 
       if (photoFile) {
         multipartBody.append("photo", photoFile);
+      }
+
+      if (licenceFile) {
+        multipartBody.append("licence", licenceFile);
       }
       
       const response = await fetch("/api/user/me", {
@@ -417,6 +448,24 @@ export default function EditProfileForm({
                   step="1"
                 />
               </label>
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-semibold text-(--text-primary)">
+                  Specialist (Specialty)
+                </span>
+                <select
+                  value={formData.specialist}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, specialist: e.target.value }))
+                  }
+                  className="w-full rounded-lg border border-(--card-border) bg-(--card-bg) px-4 py-2 text-(--text-primary) focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Choose specialty...</option>
+                  {SPECIALTIES.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </label>
             </div>
           </div>
 
@@ -578,6 +627,37 @@ export default function EditProfileForm({
                 />
               </label>
             </div>
+          </div>
+
+          {/* Licence Upload */}
+          <div className="rounded-xl border border-(--card-border) bg-(--semi-card-bg) p-4">
+            <span className="mb-3 block text-sm font-semibold text-(--text-primary)">
+              Licence Document
+            </span>
+            <p className="mb-3 text-xs text-(--text-secondary)">
+              Upload your medical licence as an image or PDF. This is optional — you can add or update it at any time.
+            </p>
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-(--card-border) bg-(--card-bg) px-4 py-3 text-sm text-(--text-primary) transition hover:border-blue-400 hover:bg-blue-50">
+              <FileText size={18} className="shrink-0 text-blue-500" />
+              <span className="truncate max-w-xs">
+                {licenceFileName || "Choose PDF or image file"}
+              </span>
+              <input
+                type="file"
+                accept="image/*,application/pdf"
+                onChange={handleLicenceChange}
+                className="hidden"
+              />
+            </label>
+            {licenceFileName && (
+              <button
+                type="button"
+                onClick={() => { setLicenceFile(null); setLicenceFileName(""); }}
+                className="ml-3 mt-2 text-xs text-red-500 hover:underline"
+              >
+                Remove
+              </button>
+            )}
           </div>
 
           <div className="flex gap-4 pt-4">

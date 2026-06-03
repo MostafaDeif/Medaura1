@@ -33,9 +33,6 @@ export default function ClinicRegisterPage() {
     else if (password.length < 6)
       nextErrors.password = "يجب أن تكون كلمة المرور 6 أحرف على الأقل";
     if (password !== confirm) nextErrors.confirm = "كلمات المرور غير متطابقة";
-    if (!address.trim()) nextErrors.address = "العنوان مطلوب";
-    if (!location.trim()) nextErrors.location = "المدينة مطلوبة";
-    if (!phone.trim()) nextErrors.phone = "رقم الهاتف مطلوب";
     if (!terms) nextErrors.terms = "يجب الموافقة على الشروط";
 
     setErrors(nextErrors);
@@ -51,9 +48,9 @@ export default function ClinicRegisterPage() {
     try {
       const profile: ClinicSignupProfile = {
         name: clinicName.trim(),
-        address: address.trim(),
-        location: location.trim(),
-        phone: phone.trim(),
+        address: "",
+        location: "",
+        phone: "",
         geo_location: {
           latitude: 0,
           longitude: 0,
@@ -226,95 +223,7 @@ export default function ClinicRegisterPage() {
         </div>
       </div>
 
-      <div>
-        <label
-          htmlFor="address"
-          className="block text-sm font-medium text-zinc-700 mb-1"
-        >
-          العنوان
-        </label>
-        <input
-          id="address"
-          name="address"
-          placeholder="العنوان"
-          value={address}
-          onChange={(event) => setAddress(event.target.value)}
-          aria-invalid={!!errors.address}
-          aria-describedby={errors.address ? "address-error" : undefined}
-          className={`w-full text-sm sm:text-base border rounded-md px-3 py-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:scale-[1.01] ${
-            errors.address ? "border-red-300" : "border-zinc-200"
-          }`}
-        />
-        {errors.address && (
-          <p
-            id="address-error"
-            role="alert"
-            className="text-sm text-red-700 mt-1"
-          >
-            {errors.address}
-          </p>
-        )}
-      </div>
 
-      <div>
-        <label
-          htmlFor="location"
-          className="block text-sm font-medium text-zinc-700 mb-1"
-        >
-          المدينة
-        </label>
-        <input
-          id="location"
-          name="location"
-          placeholder="المدينة"
-          value={location}
-          onChange={(event) => setLocation(event.target.value)}
-          aria-invalid={!!errors.location}
-          aria-describedby={errors.location ? "location-error" : undefined}
-          className={`w-full text-sm sm:text-base border rounded-md px-3 py-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:scale-[1.01] ${
-            errors.location ? "border-red-300" : "border-zinc-200"
-          }`}
-        />
-        {errors.location && (
-          <p
-            id="location-error"
-            role="alert"
-            className="text-sm text-red-700 mt-1"
-          >
-            {errors.location}
-          </p>
-        )}
-      </div>
-
-      <div>
-        <label
-          htmlFor="phone"
-          className="block text-sm font-medium text-zinc-700 mb-1"
-        >
-          رقم الهاتف
-        </label>
-        <input
-          id="phone"
-          name="phone"
-          placeholder="01000000000"
-          value={phone}
-          onChange={(event) => setPhone(event.target.value)}
-          aria-invalid={!!errors.phone}
-          aria-describedby={errors.phone ? "phone-error" : undefined}
-          className={`w-full text-sm sm:text-base border rounded-md px-3 py-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:scale-[1.01] ${
-            errors.phone ? "border-red-300" : "border-zinc-200"
-          }`}
-        />
-        {errors.phone && (
-          <p
-            id="phone-error"
-            role="alert"
-            className="text-sm text-red-700 mt-1"
-          >
-            {errors.phone}
-          </p>
-        )}
-      </div>
 
       <label
         htmlFor="terms"

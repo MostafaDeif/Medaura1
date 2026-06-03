@@ -15,6 +15,7 @@ import {
   Calendar,
   DollarSign,
   ChevronLeft,
+  FileText,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import EditProfileForm, { DoctorEditableProfile } from "./EditProfileForm";
@@ -51,6 +52,7 @@ type DoctorProfileData = {
     latitude?: number | string | null;
     longitude?: number | string | null;
   } | null;
+  licence?: string | null;
 };
 
 const DAY_LABELS: Record<string, string> = {
@@ -116,6 +118,7 @@ function buildInitialData(profile: DoctorProfileData): DoctorEditableProfile {
       latitude: toNumberOrEmpty(profile.geo_location?.latitude),
       longitude: toNumberOrEmpty(profile.geo_location?.longitude),
     },
+    specialist: profile.specialist || "",
   };
 }
 
@@ -153,12 +156,12 @@ function InfoRow({
 }: {
   icon: React.ReactNode;
   label: string;
-  value: string;
+  value: React.ReactNode;
 }) {
   return (
     <div className="ds-info-row">
       <div className="ds-info-content">
-        <span className="ds-info-value">{value}</span>
+        <div className="ds-info-value">{value}</div>
         <span className="ds-info-label">{label}</span>
       </div>
       <div className="ds-info-icon">{icon}</div>
@@ -867,6 +870,24 @@ export default function DoctorSettingsPage() {
                 icon={<User size={16} />}
                 label="الجنس"
                 value={valueOrDash(profileData.gender)}
+              />
+              <InfoRow
+                icon={<FileText size={16} />}
+                label="مستند الترخيص المهني"
+                value={
+                  profileData.licence ? (
+                    <a
+                      href={profileData.licence}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-teal-600 hover:text-teal-800 underline font-semibold transition-colors"
+                    >
+                      عرض مستند الترخيص
+                    </a>
+                  ) : (
+                    "—"
+                  )
+                }
               />
             </div>
           </div>

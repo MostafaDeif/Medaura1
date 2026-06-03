@@ -40,6 +40,7 @@ type AdminDoctor = {
   work_days?: string | null;
   location?: string | null;
   photo?: string | null;
+  licence?: string | null;
 };
 
 type DoctorsApiResponse = {
@@ -68,6 +69,7 @@ type DoctorRequest = {
     title: string;
     value: string;
     verified: boolean;
+    url?: string;
   }[];
 };
 
@@ -122,6 +124,7 @@ function normalizeDoctor(rawDoctor: unknown): AdminDoctor {
     work_days: doctor.work_days,
     location: doctor.location,
     photo: doctor.photo,
+    licence: doctor.licence,
   };
 }
 
@@ -177,6 +180,16 @@ function mapDoctorToRequest(
         value: statusMeta[status].label,
         verified: status === "approved",
       },
+      ...(doctor.licence
+        ? [
+            {
+              title: "مستند الترخيص المهني",
+              value: "مستند ترخيص الطبيب (صورة/PDF)",
+              verified: true,
+              url: doctor.licence,
+            },
+          ]
+        : []),
     ],
   };
 }
@@ -600,11 +613,23 @@ export default function DoctorRequestsPage() {
                           {document.value}
                         </p>
                       </div>
-                      {document.verified ? (
-                        <BadgeCheck size={20} className="text-[#008236]" />
-                      ) : (
-                        <ShieldAlert size={20} className="text-[#C10007]" />
-                      )}
+                      <div className="flex items-center gap-2">
+                        {document.url && (
+                          <a
+                            href={document.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="rounded-lg bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition-colors"
+                          >
+                            عرض المستند
+                          </a>
+                        )}
+                        {document.verified ? (
+                          <BadgeCheck size={20} className="text-[#008236]" />
+                        ) : (
+                          <ShieldAlert size={20} className="text-[#C10007]" />
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

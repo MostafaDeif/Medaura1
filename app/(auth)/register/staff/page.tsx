@@ -98,25 +98,12 @@ export default function StaffRegisterPage() {
 
   function validate() {
     const nextErrors: Record<string, string> = {};
-    const priceValue = Number(consultationPrice);
 
     if (!fullName.trim()) nextErrors.full_name = "الاسم الكامل مطلوب";
     if (!selectedClinic.trim()) nextErrors.name = "اختر العيادة";
     if (!email.trim()) nextErrors.email = "البريد الإلكتروني مطلوب";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       nextErrors.email = "صيغة البريد غير صحيحة";
-    }
-    if (!specialist.trim()) nextErrors.specialist = "التخصص مطلوب";
-    if (selectedDays.length === 0)
-      nextErrors.work_days = "اختر يوم عمل واحد على الأقل";
-    if (!workFrom) nextErrors.work_from = "وقت بداية العمل مطلوب";
-    if (!workTo) nextErrors.work_to = "وقت نهاية العمل مطلوب";
-    if (workFrom && workTo && workFrom >= workTo)
-      nextErrors.work_to = "وقت النهاية يجب أن يكون بعد وقت البداية";
-    if (!consultationPrice.trim()) {
-      nextErrors.consultation_price = "سعر الكشف مطلوب";
-    } else if (Number.isNaN(priceValue) || priceValue <= 0) {
-      nextErrors.consultation_price = "سعر الكشف يجب أن يكون رقماً أكبر من صفر";
     }
     if (!password) nextErrors.password = "كلمة المرور مطلوبة";
     else if (password.length < 6)
@@ -139,11 +126,11 @@ export default function StaffRegisterPage() {
         full_name: fullName.trim(),
         name: selectedClinic,
         role_title: "doctor",
-        specialist: specialist.trim(),
-        work_days: selectedDays.join(","),
-        work_from: workFrom,
-        work_to: workTo,
-        consultation_price: Number(consultationPrice),
+        specialist: "",
+        work_days: "",
+        work_from: "",
+        work_to: "",
+        consultation_price: 0,
       };
 
       const response = await signup({
@@ -293,162 +280,7 @@ export default function StaffRegisterPage() {
         )}
       </div>
 
-      <div>
-        <label
-          htmlFor="specialist"
-          className="block text-sm font-medium text-zinc-700 mb-1"
-        >
-          التخصص
-        </label>
-        <select
-          id="specialist"
-          name="specialist"
-          value={specialist}
-          onChange={(event) => setSpecialist(event.target.value)}
-          aria-invalid={!!errors.specialist}
-          aria-describedby={errors.specialist ? "specialist-error" : undefined}
-          className={`w-full text-sm sm:text-base border rounded-md px-3 py-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:scale-[1.01] ${
-            errors.specialist ? "border-red-300" : "border-zinc-200"
-          }`}
-        >
-          <option value="">اختر التخصص</option>
-          {SPECIALTIES.map((item) => (
-            <option key={item} value={item}>
-              {item}
-            </option>
-          ))}
-        </select>
-        {errors.specialist && (
-          <p
-            id="specialist-error"
-            role="alert"
-            className="text-sm text-red-700 mt-1"
-          >
-            {errors.specialist}
-          </p>
-        )}
-      </div>
 
-      <div>
-        <p className="block text-sm font-medium text-zinc-700 mb-2">
-          أيام العمل
-        </p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {WORK_DAYS.map((day) => (
-            <button
-              key={day.id}
-              type="button"
-              onClick={() => toggleDay(day.id)}
-              className={`rounded-lg border px-3 py-2 text-sm text-zinc-700 transition ${
-                selectedDays.includes(day.id)
-                  ? "border-indigo-600 bg-indigo-50 text-indigo-700"
-                  : "border-zinc-200 bg-white hover:border-indigo-300"
-              }`}
-            >
-              {day.label}
-            </button>
-          ))}
-        </div>
-        {errors.work_days && (
-          <p className="text-sm text-red-700 mt-2">{errors.work_days}</p>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label
-            htmlFor="workFrom"
-            className="block text-sm font-medium text-zinc-700 mb-1"
-          >
-            وقت بداية العمل
-          </label>
-          <input
-            id="workFrom"
-            name="workFrom"
-            type="time"
-            value={workFrom}
-            onChange={(event) => setWorkFrom(event.target.value)}
-            aria-invalid={!!errors.work_from}
-            aria-describedby={errors.work_from ? "workFrom-error" : undefined}
-            className={`w-full text-sm sm:text-base border rounded-md px-3 py-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:scale-[1.01] ${
-              errors.work_from ? "border-red-300" : "border-zinc-200"
-            }`}
-          />
-          {errors.work_from && (
-            <p
-              id="workFrom-error"
-              role="alert"
-              className="text-sm text-red-700 mt-1"
-            >
-              {errors.work_from}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <label
-            htmlFor="workTo"
-            className="block text-sm font-medium text-zinc-700 mb-1"
-          >
-            وقت نهاية العمل
-          </label>
-          <input
-            id="workTo"
-            name="workTo"
-            type="time"
-            value={workTo}
-            onChange={(event) => setWorkTo(event.target.value)}
-            aria-invalid={!!errors.work_to}
-            aria-describedby={errors.work_to ? "workTo-error" : undefined}
-            className={`w-full text-sm sm:text-base border rounded-md px-3 py-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:scale-[1.01] ${
-              errors.work_to ? "border-red-300" : "border-zinc-200"
-            }`}
-          />
-          {errors.work_to && (
-            <p
-              id="workTo-error"
-              role="alert"
-              className="text-sm text-red-700 mt-1"
-            >
-              {errors.work_to}
-            </p>
-          )}
-        </div>
-      </div>
-
-      <div>
-        <label
-          htmlFor="consultationPrice"
-          className="block text-sm font-medium text-zinc-700 mb-1"
-        >
-          سعر الكشف
-        </label>
-        <input
-          id="consultationPrice"
-          name="consultationPrice"
-          type="number"
-          min="0"
-          placeholder="200"
-          value={consultationPrice}
-          onChange={(event) => setConsultationPrice(event.target.value)}
-          aria-invalid={!!errors.consultation_price}
-          aria-describedby={
-            errors.consultation_price ? "consultationPrice-error" : undefined
-          }
-          className={`w-full text-sm sm:text-base border rounded-md px-3 py-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:scale-[1.01] ${
-            errors.consultation_price ? "border-red-300" : "border-zinc-200"
-          }`}
-        />
-        {errors.consultation_price && (
-          <p
-            id="consultationPrice-error"
-            role="alert"
-            className="text-sm text-red-700 mt-1"
-          >
-            {errors.consultation_price}
-          </p>
-        )}
-      </div>
 
       <div>
         <label className="block text-sm font-medium text-zinc-700 mb-1">
