@@ -39,6 +39,7 @@ async function fetchMyStats(): Promise<ClinicMyStats | null> {
   }
 }
 
+
 function extractStaffList<T extends object>(raw: unknown) {
   if (Array.isArray(raw)) return raw as T[];
   if (!raw || typeof raw !== "object") return [];

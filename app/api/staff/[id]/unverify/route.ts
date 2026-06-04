@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { apiClient } from "@/lib/api/client";
+import { staffService } from "@/lib/api/staff";
 import { getServerAccessToken, applyAuthCookies } from "@/lib/api/server-auth";
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -16,7 +16,6 @@ function getErrorStatus(error: unknown) {
 }
 
 // PATCH /api/staff/[id]/unverify
-// Tries the admin unverify endpoint — the backend only exposes this via admin routes.
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -41,39 +40,13 @@ export async function PATCH(
       );
     }
 
-    // Try candidate endpoints — backend may expose this under admin or staff routes
-    const candidates = [
-      `/api/admin/${staffId}/unverify`,
-      `/api/staff/${staffId}/unverify`,
-      `/api/admin/staff/${staffId}/unverify`,
-    ];
-
-    let lastError: unknown;
-    for (const endpoint of candidates) {
-      try {
-        const data = await apiClient.patch<unknown>(endpoint, undefined, {
-          token: auth.token,
-        });
-        const res = NextResponse.json({ success: true, data });
-        return applyAuthCookies(res, auth);
-      } catch (err: unknown) {
-        const status =
-          typeof err === "object" && err !== null && "status" in err
-            ? (err as { status: number }).status
-            : 500;
-        if (status !== 404 && status !== 405) throw err;
-        lastError = err;
-      }
-    }
-
-    throw lastError;
+    const data = await staffService.unverify(staffId, auth.token);
+    const res = NextResponse.json({ success: true, data });
+    return applyAuthCookies(res, auth);
   } catch (error: unknown) {
     console.error("Unverify staff error:", error);
     return NextResponse.json(
-      {
-        success: false,
-        error: getErrorMessage(error, "Failed to unverify staff"),
-      },
+      { success: false, error: getErrorMessage(error, "Failed to unverify staff") },
       { status: getErrorStatus(error) }
     );
   }

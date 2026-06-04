@@ -8,7 +8,6 @@ import {
   Clock,
   User,
   ShieldOff,
-  Trash2,
   AlertTriangle,
   X,
 } from "lucide-react";
@@ -64,25 +63,21 @@ function getActiveStatus(member: StaffMember) {
   return toBooleanFlag(member.is_active ?? member.isActive ?? member.active);
 }
 
-// ── Confirm Dialog ─────────────────────────────────────────────────────────────
+// ── Confirm Dialog (unverify only) ────────────────────────────────────────────
 function ConfirmDialog({
   open,
-  type,
   doctorName,
   onConfirm,
   onCancel,
   loading,
 }: {
   open: boolean;
-  type: "unverify" | "delete";
   doctorName: string;
   onConfirm: () => void;
   onCancel: () => void;
   loading: boolean;
 }) {
   if (!open) return null;
-
-  const isDelete = type === "delete";
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
@@ -105,26 +100,15 @@ function ConfirmDialog({
 
         {/* Icon */}
         <div className="flex flex-col items-center gap-3 pt-1">
-          <div
-            className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
-              isDelete
-                ? "bg-rose-100 dark:bg-rose-900/30"
-                : "bg-amber-100 dark:bg-amber-900/30"
-            }`}
-          >
-            <AlertTriangle
-              size={26}
-              className={isDelete ? "text-rose-500" : "text-amber-500"}
-            />
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-amber-100 dark:bg-amber-900/30">
+            <AlertTriangle size={26} className="text-amber-500" />
           </div>
           <div className="text-center">
             <h3 className="font-semibold text-(--text-primary) text-base">
-              {isDelete ? "حذف الطبيب" : "إلغاء التوثيق"}
+              إلغاء التوثيق
             </h3>
             <p className="text-sm text-(--text-secondary) mt-1">
-              {isDelete
-                ? `هل أنت متأكد من حذف حساب "${doctorName}" نهائياً؟ لا يمكن التراجع عن هذا الإجراء.`
-                : `هل تريد إلغاء توثيق "${doctorName}"؟ سيعود إلى وضع الانتظار.`}
+              هل تريد إلغاء توثيق &quot;{doctorName}&quot;؟ سيعود إلى وضع الانتظار.
             </p>
           </div>
         </div>
@@ -140,21 +124,12 @@ function ConfirmDialog({
           <button
             onClick={onConfirm}
             disabled={loading}
-            className={`flex-1 px-4 py-2 rounded-xl text-sm font-semibold text-white transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 ${
-              isDelete
-                ? "bg-rose-500 hover:bg-rose-600"
-                : "bg-amber-500 hover:bg-amber-600"
-            }`}
+            className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
           >
             {loading ? (
               <>
                 <span className="w-3 h-3 rounded-full border-2 border-white/40 border-t-white animate-spin" />
                 جاري...
-              </>
-            ) : isDelete ? (
-              <>
-                <Trash2 size={13} />
-                حذف نهائياً
               </>
             ) : (
               <>
@@ -176,14 +151,12 @@ function StaffCard({
   verifyingId,
   onVerify,
   onUnverifyClick,
-  onDeleteClick,
 }: {
   member: StaffMember;
   idx: number;
   verifyingId: number | null;
   onVerify: (id: number) => void;
   onUnverifyClick: (member: StaffMember) => void;
-  onDeleteClick: (member: StaffMember) => void;
 }) {
   const staffId = getStaffId(member);
   const verified = getStaffVerified(member);
@@ -237,37 +210,28 @@ function StaffCard({
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex gap-2 flex-wrap">
-        {!verified ? (
-          <button
-            onClick={() => { if (staffId !== null) onVerify(staffId); }}
-            disabled={staffId === null || verifyingId === staffId}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-teal-500 text-white hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
-          >
-            {verifyingId === staffId ? (
-              <><span className="w-3 h-3 rounded-full border-2 border-white/40 border-t-white animate-spin" />جاري التوثيق...</>
-            ) : (
-              <><BadgeCheck size={13} />توثيق الطبيب</>
-            )}
-          </button>
-        ) : (
-          <button
-            onClick={() => onUnverifyClick(member)}
-            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-all duration-200"
-          >
-            <ShieldOff size={13} />
-            إلغاء التوثيق
-          </button>
-        )}
+      {/* Action */}
+      {!verified ? (
         <button
-          onClick={() => onDeleteClick(member)}
-          className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400 hover:bg-rose-200 dark:hover:bg-rose-900/50 transition-all duration-200"
+          onClick={() => { if (staffId !== null) onVerify(staffId); }}
+          disabled={staffId === null || verifyingId === staffId}
+          className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-teal-500 text-white hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
         >
-          <Trash2 size={13} />
-          حذف
+          {verifyingId === staffId ? (
+            <><span className="w-3 h-3 rounded-full border-2 border-white/40 border-t-white animate-spin" />جاري التوثيق...</>
+          ) : (
+            <><BadgeCheck size={13} />توثيق الطبيب</>
+          )}
         </button>
-      </div>
+      ) : (
+        <button
+          onClick={() => onUnverifyClick(member)}
+          className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-all duration-200"
+        >
+          <ShieldOff size={13} />
+          إلغاء التوثيق
+        </button>
+      )}
     </div>
   );
 }
@@ -275,30 +239,25 @@ function StaffCard({
 // ── Main component ────────────────────────────────────────────────────────────
 export default function StaffTable({ staff, loading, onVerify, onUnverify, onDelete }: StaffTableProps) {
   const [verifyingId, setVerifyingId] = useState<number | null>(null);
-  const [confirm, setConfirm] = useState<{
-    type: "unverify" | "delete";
-    member: StaffMember;
-  } | null>(null);
+  const [confirmMember, setConfirmMember] = useState<StaffMember | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
+
+  // Keep onDelete in props signature for compatibility but don't render the button
+  void onDelete;
 
   const handleVerify = async (id: number) => {
     setVerifyingId(id);
     try { await onVerify(id); } finally { setVerifyingId(null); }
   };
 
-  const openConfirm = (type: "unverify" | "delete", member: StaffMember) => {
-    setConfirm({ type, member });
-  };
-
-  const handleConfirm = async () => {
-    if (!confirm) return;
-    const staffId = getStaffId(confirm.member);
+  const handleConfirmUnverify = async () => {
+    if (!confirmMember) return;
+    const staffId = getStaffId(confirmMember);
     if (staffId === null) return;
     setConfirmLoading(true);
     try {
-      if (confirm.type === "unverify") await onUnverify(staffId);
-      else await onDelete(staffId);
-      setConfirm(null);
+      await onUnverify(staffId);
+      setConfirmMember(null);
     } finally {
       setConfirmLoading(false);
     }
@@ -337,13 +296,12 @@ export default function StaffTable({ staff, loading, onVerify, onUnverify, onDel
 
   return (
     <>
-      {/* Confirm Dialog */}
+      {/* Confirm unverify dialog */}
       <ConfirmDialog
-        open={confirm !== null}
-        type={confirm?.type ?? "delete"}
-        doctorName={confirm?.member.full_name ?? ""}
-        onConfirm={handleConfirm}
-        onCancel={() => setConfirm(null)}
+        open={confirmMember !== null}
+        doctorName={confirmMember?.full_name ?? ""}
+        onConfirm={handleConfirmUnverify}
+        onCancel={() => setConfirmMember(null)}
         loading={confirmLoading}
       />
 
@@ -356,8 +314,7 @@ export default function StaffTable({ staff, loading, onVerify, onUnverify, onDel
             idx={idx}
             verifyingId={verifyingId}
             onVerify={handleVerify}
-            onUnverifyClick={(m) => openConfirm("unverify", m)}
-            onDeleteClick={(m) => openConfirm("delete", m)}
+            onUnverifyClick={setConfirmMember}
           />
         ))}
       </div>
@@ -431,41 +388,29 @@ export default function StaffTable({ staff, loading, onVerify, onUnverify, onDel
                     )}
                   </td>
 
-                  {/* Actions */}
+                  {/* Action */}
                   <td className="px-4 py-3.5 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      {/* Verify / Unverify */}
-                      {!verified ? (
-                        <button
-                          onClick={() => { if (staffId !== null) void handleVerify(staffId); }}
-                          disabled={staffId === null || verifyingId === staffId}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-teal-500 text-white hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md hover:-translate-y-px"
-                        >
-                          {verifyingId === staffId ? (
-                            <><span className="w-3 h-3 rounded-full border-2 border-white/40 border-t-white animate-spin" />جاري...</>
-                          ) : (
-                            <><BadgeCheck size={13} />توثيق</>
-                          )}
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => openConfirm("unverify", member)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-all duration-200"
-                        >
-                          <ShieldOff size={13} />
-                          إلغاء التوثيق
-                        </button>
-                      )}
-
-                      {/* Delete */}
+                    {!verified ? (
                       <button
-                        onClick={() => openConfirm("delete", member)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400 hover:bg-rose-200 dark:hover:bg-rose-900/50 transition-all duration-200"
+                        onClick={() => { if (staffId !== null) void handleVerify(staffId); }}
+                        disabled={staffId === null || verifyingId === staffId}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-teal-500 text-white hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md hover:-translate-y-px"
                       >
-                        <Trash2 size={13} />
-                        حذف
+                        {verifyingId === staffId ? (
+                          <><span className="w-3 h-3 rounded-full border-2 border-white/40 border-t-white animate-spin" />جاري...</>
+                        ) : (
+                          <><BadgeCheck size={13} />توثيق</>
+                        )}
                       </button>
-                    </div>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmMember(member)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-all duration-200"
+                      >
+                        <ShieldOff size={13} />
+                        إلغاء التوثيق
+                      </button>
+                    )}
                   </td>
                 </tr>
               );
