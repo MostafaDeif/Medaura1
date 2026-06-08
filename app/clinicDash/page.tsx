@@ -26,6 +26,11 @@ import {
   isDoctorStaffRecord,
   normalizeStaffRecord,
 } from "./features/staff/staffIdentity";
+import { useBookingStream } from "./hooks/useBookingStream";
+import {
+  NewBookingToast,
+  ConnectionPill,
+} from "./components/ui/LiveBookingAlert";
 
 // ── Data-fetching helpers ─────────────────────────────────────────────────────
 
@@ -123,6 +128,24 @@ export default function ClinicDashPage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
+
+  // ── Real-time booking stream ────────────────────────────────────────────────
+  const {
+    newBookingsCount,
+    lastBooking,
+    connected: streamConnected,
+    resetCount,
+    syncedTotalBookings,
+  } = useBookingStream();
+
+  // Track whether to show the toast (new booking has arrived)
+  const [showToast, setShowToast] = useState(false);
+
+  useEffect(() => {
+    if (newBookingsCount > 0 && lastBooking) {
+      setShowToast(true);
+    }
+  }, [newBookingsCount, lastBooking]);
 
   // ── Load all data ───────────────────────────────────────────────────────────
   const loadData = useCallback(async () => {
@@ -226,7 +249,9 @@ export default function ClinicDashPage() {
     stats?.total_doctors ??
     staff.filter((member) => isDoctorStaffRecord(member)).length;
   const pendingCount = pending.length;
-  const bookingsCount = stats?.total_bookings ?? 0;
+  // Prefer the live-synced value from SSE (always up-to-date) over the
+  // initial stats fetch (which was a one-time snapshot)
+  const bookingsCount = syncedTotalBookings ?? stats?.total_bookings ?? 0;
   const totalStaffCount = stats?.total_staff ?? staff.length;
 
   // Booking acceptance rate
@@ -248,6 +273,7 @@ export default function ClinicDashPage() {
             <p className="text-xs text-teal-600 dark:text-teal-400 font-semibold uppercase tracking-wider">
               لوحة التحكم
             </p>
+            <ConnectionPill connected={streamConnected} />
           </div>
           <h1 className="text-2xl font-bold text-(--text-primary) mt-1">
             {stats?.clinic_name
@@ -308,7 +334,7 @@ export default function ClinicDashPage() {
 
         <StatsCard
           title="إجمالي الحجوزات"
-          value={statsLoading ? "—" : bookingsCount}
+          value={statsLoading && syncedTotalBookings === null ? "—" : bookingsCount}
           icon={
             <CalendarCheck size={18} strokeWidth={2} className="text-white" />
           }
@@ -320,13 +346,21 @@ export default function ClinicDashPage() {
               : undefined
           }
           badge={
-            confirmedRate !== null
+            newBookingsCount > 0
+              ? `+${newBookingsCount} جديد الآن`
+              : confirmedRate !== null
               ? `${confirmedRate}% مؤكدة`
               : undefined
           }
           badgeColor={
-            confirmedRate !== null && confirmedRate >= 70 ? "green" : "amber"
+            newBookingsCount > 0
+              ? "teal"
+              : confirmedRate !== null && confirmedRate >= 70
+              ? "green"
+              : "amber"
           }
+          liveCount={newBookingsCount > 0 ? newBookingsCount : undefined}
+          onLiveBadgeClick={resetCount}
           delay={80}
         />
 
@@ -453,6 +487,15 @@ export default function ClinicDashPage() {
         onClose={() => setCreateModalOpen(false)}
         onSuccess={() => setRefreshKey((k) => k + 1)}
       />
+
+      {/* ── Real-time new booking toast ───────────────────────────────────────── */}
+      {showToast && lastBooking && (
+        <NewBookingToast
+          key={lastBooking.timestamp}
+          booking={lastBooking}
+          onDismiss={() => setShowToast(false)}
+        />
+      )}
     </div>
   );
 }

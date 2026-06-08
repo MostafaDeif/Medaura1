@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { bookingService } from "@/lib/api/bookings";
 import type { BookingRequest } from "@/lib/types/api";
+import { bookingEventBus } from "@/lib/booking-events";
 
 function getStatus(error: unknown) {
   return typeof error === "object" && error !== null && "status" in error
@@ -46,6 +47,16 @@ export async function POST(request: NextRequest) {
     }
 
     const response = await bookingService.create(body, token);
+
+    // Broadcast the new booking to all connected clinic dashboard subscribers
+    bookingEventBus.emit({
+      clinic_id: (response as any)?.clinic_id ?? null,
+      doctor_id: body.staff_id ?? body.doctor_id ?? null,
+      patient_name: (response as any)?.patient_name ?? null,
+      booking_date: body.booking_date ?? null,
+      booking_from: body.booking_from ?? null,
+      timestamp: new Date().toISOString(),
+    });
 
     return NextResponse.json(
       { success: true, data: response },

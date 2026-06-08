@@ -9,6 +9,7 @@ import {
   Settings,
   Building2,
   ChevronRight,
+  DollarSign,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -48,6 +49,12 @@ const menu = [
   {
     title: "الإدارة",
     items: [
+      {
+        text: "الإدارة المالية",
+        icon: <DollarSign size={16} />,
+        href: "/clinicDash/financial",
+        exact: false,
+      },
       {
         text: "الإعدادات",
         icon: <Settings size={16} />,

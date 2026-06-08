@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { clinicService } from "@/lib/api/clinic";
+import { bookingEventBus } from "@/lib/booking-events";
 
 // GET /api/clinic/bookings?clinic_id=1
 export async function GET(request: NextRequest) {
@@ -67,6 +68,16 @@ export async function POST(request: NextRequest) {
     }
 
     const response = await clinicService.createBooking(body, token);
+
+    // Broadcast the new booking to all connected clinic dashboard SSE subscribers
+    bookingEventBus.emit({
+      clinic_id: (response as any)?.clinic_id ?? null,
+      doctor_id: body.doctor_id ?? null,
+      patient_name: (response as any)?.patient_name ?? null,
+      booking_date: body.booking_date ?? null,
+      booking_from: body.booking_from ?? null,
+      timestamp: new Date().toISOString(),
+    });
 
     return NextResponse.json({ success: true, data: response }, { status: 201 });
   } catch (error: any) {

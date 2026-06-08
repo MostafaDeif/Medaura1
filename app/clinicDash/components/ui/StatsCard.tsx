@@ -16,6 +16,10 @@ interface StatsCardProps {
   badgeColor?: "green" | "red" | "amber" | "teal";
   change?: number; // e.g. +12 or -5 (percentage)
   delay?: number;  // animation stagger delay in ms
+  /** Number of new live bookings — triggers a glowing ring + counter badge */
+  liveCount?: number;
+  /** Called when the user clicks the live-count badge to acknowledge */
+  onLiveBadgeClick?: () => void;
 }
 
 const badgeClasses = {
@@ -73,6 +77,8 @@ export default function StatsCard({
   badgeColor = "teal",
   change,
   delay = 0,
+  liveCount,
+  onLiveBadgeClick,
 }: StatsCardProps) {
   const gradientId = useId();
   const numericValue = typeof value === "number" ? value : null;
@@ -103,6 +109,16 @@ export default function StatsCard({
         animation: `fadeUp 0.5s ease both`,
       }}
     >
+      {/* Live pulse ring — visible when new bookings arrive */}
+      {liveCount != null && liveCount > 0 && (
+        <span
+          className="absolute inset-0 rounded-2xl pointer-events-none"
+          style={{
+            boxShadow: `0 0 0 2px ${chartColor}55, 0 0 18px 4px ${chartColor}33`,
+            animation: "livePulse 1.8s ease-in-out infinite",
+          }}
+        />
+      )}
       {/* Subtle glow on hover */}
       <div
         className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl"
@@ -144,6 +160,25 @@ export default function StatsCard({
             </div>
             {subtitle && (
               <p className="text-xs text-(--text-secondary) mt-0.5">{subtitle}</p>
+            )}
+            {/* Live new-bookings badge */}
+            {liveCount != null && liveCount > 0 && (
+              <button
+                onClick={onLiveBadgeClick}
+                title="اضغط لإعادة الضبط"
+                className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full cursor-pointer select-none"
+                style={{
+                  background: `${chartColor}22`,
+                  color: chartColor,
+                  border: `1px solid ${chartColor}44`,
+                }}
+              >
+                <span
+                  className="w-1.5 h-1.5 rounded-full shrink-0"
+                  style={{ background: chartColor, animation: "ping 1s cubic-bezier(0,0,0.2,1) infinite" }}
+                />
+                +{liveCount} جديد الآن
+              </button>
             )}
           </div>
         </div>
