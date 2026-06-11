@@ -28,8 +28,8 @@ type BestDoctorApiItem = {
 };
 
 type BestDoctor = {
-  id: number;
-  clinicId?: number;
+  id: string;
+  clinicId?: string;
   providerType: "doctor" | "staff";
   name: string;
   specialty: string;
@@ -41,16 +41,15 @@ type BestDoctor = {
 
 function mapBestDoctor(doctor: BestDoctorApiItem): BestDoctor {
   const providerType = doctor.provider_type === "staff" ? "staff" : "doctor";
-  const id = Number(
-    providerType === "staff"
-      ? (doctor.staff_id ?? doctor.target_id)
-      : (doctor.doctor_id ?? doctor.target_id),
-  );
+  const rawId = providerType === "staff"
+    ? (doctor.staff_id ?? doctor.target_id)
+    : (doctor.doctor_id ?? doctor.target_id);
+  const id = rawId ? String(rawId) : "";
   const rating = Number(doctor.average_rating ?? 0);
 
   return {
     id,
-    clinicId: doctor.clinic_id ?? undefined,
+    clinicId: doctor.clinic_id ? String(doctor.clinic_id) : undefined,
     providerType,
     name: doctor.full_name || "",
     specialty: doctor.specialist || "",

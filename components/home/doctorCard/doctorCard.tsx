@@ -8,8 +8,8 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
 type DoctorCardProps = {
-  id: number;
-  clinicId?: number;
+  id: string | number;
+  clinicId?: string | number;
   name: string;
   specialty: string;
   rating: number;
