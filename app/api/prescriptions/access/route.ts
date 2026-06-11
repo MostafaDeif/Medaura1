@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     const response = await prescriptionService.requestAccess(
-      parseInt(bookingId),
+      bookingId,
       token
     );
 
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
     }
 
     const response = await prescriptionService.getAccessInfo(
-      parseInt(bookingId),
+      bookingId,
       token
     );
 

@@ -36,7 +36,7 @@ async function fetchPending(): Promise<PendingStaffMember[]> {
 }
 
 async function verifyStaff(id: number): Promise<void> {
-  if (!Number.isInteger(id) || id <= 0) {
+  if (!id) {
     throw new Error("Invalid staff ID");
   }
 

@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     let response;
     try {
       response = await ratingService.rateClinic(
-        parseInt(clinicId),
+        clinicId,
         body,
         token
       );
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
       if (!token) throw error;
 
       response = await ratingService.rateClinic(
-        parseInt(clinicId),
+        clinicId,
         body,
         token
       );
@@ -126,7 +126,7 @@ export async function GET(request: NextRequest) {
 
     try {
       response = await ratingService.getClinicRatings(
-        parseInt(clinicId),
+        clinicId,
         {
           page: page ? Number(page) : undefined,
           limit: limit ? Number(limit) : undefined,
@@ -140,7 +140,7 @@ export async function GET(request: NextRequest) {
       token = auth.token || authHeader?.replace("Bearer ", "");
 
       response = await ratingService.getClinicRatings(
-        parseInt(clinicId),
+        clinicId,
         {
           page: page ? Number(page) : undefined,
           limit: limit ? Number(limit) : undefined,

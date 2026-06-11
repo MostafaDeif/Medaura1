@@ -81,21 +81,21 @@ async function fetchPendingStaff(): Promise<PendingStaffMember[]> {
 }
 
 async function verifyStaff(id: number): Promise<void> {
-  if (!Number.isInteger(id) || id <= 0) throw new Error("Invalid staff ID");
+  if (!id) throw new Error("Invalid staff ID");
   const res = await fetch(`/api/staff/${id}/verify`, { method: "PATCH", credentials: "include" });
   const json = await res.json();
   if (!res.ok || !json.success) throw new Error(json.error || "فشل توثيق الطبيب");
 }
 
 async function unverifyStaff(id: number): Promise<void> {
-  if (!Number.isInteger(id) || id <= 0) throw new Error("Invalid staff ID");
+  if (!id) throw new Error("Invalid staff ID");
   const res = await fetch(`/api/staff/${id}/unverify`, { method: "PATCH", credentials: "include" });
   const json = await res.json();
   if (!res.ok || !json.success) throw new Error(json.error || "فشل إلغاء توثيق الطبيب");
 }
 
 async function deleteStaffById(id: number): Promise<void> {
-  if (!Number.isInteger(id) || id <= 0) throw new Error("Invalid staff ID");
+  if (!id) throw new Error("Invalid staff ID");
   const res = await fetch(`/api/staff/${id}/delete`, { method: "DELETE", credentials: "include" });
   const json = await res.json();
   if (!res.ok || !json.success) throw new Error(json.error || "فشل حذف الطبيب");

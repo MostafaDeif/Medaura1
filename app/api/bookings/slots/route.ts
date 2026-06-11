@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     }
 
     const response = await bookingService.getAvailableSlots({
-      staff_id: parseInt(staffId as string),
+      staff_id: staffId as string,
       booking_date: bookingDate,
     });
 

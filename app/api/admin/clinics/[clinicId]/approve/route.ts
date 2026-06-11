@@ -24,7 +24,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const response = await adminService.approveClinic(parseInt(clinicId), token);
+    const response = await adminService.approveClinic(clinicId, token);
 
     return applyAuthCookies(
       NextResponse.json({ success: true, data: response }),

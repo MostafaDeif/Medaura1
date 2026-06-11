@@ -16,7 +16,7 @@ function buildRatingsQuery(params?: RatingsQuery) {
 }
 
 export const ratingService = {
-  async rateDoctor(doctorId: number, data: RatingRequest, token: string) {
+  async rateDoctor(doctorId: string | number, data: RatingRequest, token: string) {
     return apiClient.post<RatingResponse>(
       `/api/ratings/doctor/${doctorId}`,
       data,
@@ -25,7 +25,7 @@ export const ratingService = {
   },
 
   async getDoctorRatings(
-    doctorId: number,
+    doctorId: string | number,
     params?: RatingsQuery,
     token?: string,
   ) {
@@ -35,7 +35,7 @@ export const ratingService = {
     });
   },
 
-  async rateClinic(clinicId: number, data: RatingRequest, token: string) {
+  async rateClinic(clinicId: string | number, data: RatingRequest, token: string) {
     return apiClient.post<RatingResponse>(
       `/api/ratings/clinic/${clinicId}`,
       data,
@@ -44,7 +44,7 @@ export const ratingService = {
   },
 
   async getClinicRatings(
-    clinicId: number,
+    clinicId: string | number,
     params?: RatingsQuery,
     token?: string,
   ) {
@@ -54,7 +54,7 @@ export const ratingService = {
     });
   },
 
-  async rateStaff(staffId: number, data: RatingRequest, token: string) {
+  async rateStaff(staffId: string | number, data: RatingRequest, token: string) {
     return apiClient.post<RatingResponse>(
       `/api/ratings/staff/${staffId}`,
       data,
@@ -63,7 +63,7 @@ export const ratingService = {
   },
 
   async getStaffRatings(
-    staffId: number,
+    staffId: string | number,
     params?: RatingsQuery,
     token?: string,
   ) {

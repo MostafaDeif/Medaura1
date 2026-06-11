@@ -24,7 +24,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const response = await adminService.unverifyDoctor(parseInt(userId), token);
+    const response = await adminService.unverifyDoctor(userId, token);
     return applyAuthCookies(
       NextResponse.json({ success: true, data: response }),
       auth

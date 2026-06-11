@@ -73,7 +73,7 @@ export const adminService = {
     return [];
   },
 
-  async verifyDoctor(doctorId: number, token: string) {
+  async verifyDoctor(doctorId: string | number, token: string) {
     return apiClient.patch(
       `/api/admin/${doctorId}/verify`,
       undefined,
@@ -81,7 +81,7 @@ export const adminService = {
     );
   },
 
-  async unverifyDoctor(doctorId: number, token: string) {
+  async unverifyDoctor(doctorId: string | number, token: string) {
     return apiClient.patch(
       `/api/admin/${doctorId}/unverify`,
       undefined,
@@ -167,7 +167,7 @@ export const adminService = {
     return [];
   },
 
-  async approveClinic(clinicId: number, token: string) {
+  async approveClinic(clinicId: string | number, token: string) {
     return patchFirstAvailable<unknown>(
       [
         { endpoint: `/api/admin/clinics/${clinicId}/approve` },
@@ -181,7 +181,7 @@ export const adminService = {
     );
   },
 
-  async rejectClinic(clinicId: number, token: string) {
+  async rejectClinic(clinicId: string | number, token: string) {
     return patchFirstAvailable<unknown>(
       [
         { endpoint: `/api/admin/clinics/${clinicId}/reject` },
@@ -195,7 +195,7 @@ export const adminService = {
     );
   },
 
-  async unverifyClinic(clinicId: number, token: string) {
+  async unverifyClinic(clinicId: string | number, token: string) {
     return patchFirstAvailable<unknown>(
       [
         { endpoint: `/api/admin/clinics/${clinicId}/unverify` },
@@ -383,14 +383,14 @@ export const adminService = {
     return [];
   },
 
-  async deleteUser(userId: number, token: string) {
+  async deleteUser(userId: string | number | string, token: string) {
     return apiClient.delete<unknown>(
-      `/api/admin/users/${userId}/delete`,
+      `/api/admin/users/${userId}`,
       { token }
     );
   },
 
-  async undeleteUser(userId: number, token: string) {
+  async undeleteUser(userId: string | number, token: string) {
     return apiClient.patch<unknown>(
       `/api/admin/users/${userId}/undelete`,
       undefined,

@@ -342,9 +342,9 @@ export default function BookingPage() {
   const params = useParams();
   const router = useRouter();
 
-  const clinicId = Number(params.id);
-  const staffId = Number(params.doctorId);
-  const fallbackClinic = allClinics.find((c) => c.id === clinicId);
+  const clinicId = params.id as string;
+  const staffId = params.doctorId as string;
+  const fallbackClinic = allClinics.find((c) => String(c.id) === clinicId);
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);

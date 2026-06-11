@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const response = await staffService.getProfile(parseInt(staffId));
+    const response = await staffService.getProfile(staffId);
     return NextResponse.json({ success: true, data: response });
   } catch (error: any) {
     console.error("Get staff profile error:", error);

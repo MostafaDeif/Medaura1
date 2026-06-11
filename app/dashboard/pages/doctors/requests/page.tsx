@@ -27,8 +27,8 @@ type RequestStatus = "pending" | "approved" | "rejected";
 type FilterStatus = "all" | RequestStatus;
 
 type AdminDoctor = {
-  doctor_id: number;
-  user_id?: number;
+  doctor_id: number | string;
+  user_id?: number | string;
   email: string;
   full_name: string;
   specialist: string;
@@ -98,14 +98,14 @@ const filters: { key: FilterStatus; label: string }[] = [
 
 function normalizeDoctor(rawDoctor: unknown): AdminDoctor {
   const doctor = rawDoctor as Partial<AdminDoctor> & {
-    id?: number;
+    id?: number | string;
     name?: string;
     specialty?: string;
     verified?: boolean;
   };
 
   return {
-    doctor_id: Number(doctor.doctor_id ?? doctor.id),
+    doctor_id: doctor.doctor_id ?? doctor.id ?? "",
     user_id: doctor.user_id,
     email: doctor.email ?? "",
     full_name: doctor.full_name ?? doctor.name ?? "طبيب بدون اسم",

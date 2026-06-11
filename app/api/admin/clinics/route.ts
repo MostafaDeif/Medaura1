@@ -16,9 +16,9 @@ function getClinicId(request: NextRequest) {
   const id =
     request.nextUrl.searchParams.get("clinic_id") ??
     request.nextUrl.searchParams.get("id");
-  const clinicId = Number(id);
+  const clinicId = id;
 
-  return Number.isInteger(clinicId) && clinicId > 0 ? clinicId : null;
+  return clinicId ? clinicId : null;
 }
 
 function getErrorMessage(error: unknown, fallback: string) {

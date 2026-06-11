@@ -43,7 +43,7 @@ export async function PATCH(request: NextRequest) {
     let response;
     try {
       response = await notificationService.markAsRead(
-        parseInt(notificationId),
+        notificationId,
         auth.token
       );
     } catch (error: unknown) {
@@ -52,7 +52,7 @@ export async function PATCH(request: NextRequest) {
       auth = await getServerAccessToken(request, { forceRefresh: true });
       if (!auth.token) throw error;
       response = await notificationService.markAsRead(
-        parseInt(notificationId),
+        notificationId,
         auth.token
       );
     }

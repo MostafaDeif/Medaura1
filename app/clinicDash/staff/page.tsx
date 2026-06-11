@@ -48,7 +48,7 @@ async function fetchMyStaff(): Promise<StaffMember[]> {
 }
 
 async function verifyStaff(id: number): Promise<void> {
-  if (!Number.isInteger(id) || id <= 0) {
+  if (!id) {
     throw new Error("Invalid staff ID");
   }
 
@@ -61,7 +61,7 @@ async function verifyStaff(id: number): Promise<void> {
 }
 
 async function unverifyStaff(id: number): Promise<void> {
-  if (!Number.isInteger(id) || id <= 0) {
+  if (!id) {
     throw new Error("Invalid staff ID");
   }
 

@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 interface Notification {
-  notification_id: number;
+  notification_id: string;
   title: string;
   message: string;
   is_read: boolean;
@@ -100,7 +100,7 @@ export default function NotificationsPage() {
     if (isAuthenticated) loadNotifications();
   }, [isAuthenticated, loadNotifications]);
 
-  async function markAsRead(id: number) {
+  async function markAsRead(id: string) {
     try {
       await fetch(`/api/notifications/${id}/read`, {
         method: "PATCH",

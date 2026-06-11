@@ -27,9 +27,9 @@ type StaffIdentityRecord = {
 };
 
 function toPositiveNumber(value: unknown) {
-  const numeric = typeof value === "string" ? Number(value) : value;
+  const numeric = value;
 
-  return typeof numeric === "number" && Number.isInteger(numeric) && numeric > 0
+  return !!numeric
     ? numeric
     : null;
 }

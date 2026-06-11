@@ -31,9 +31,9 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const staffId = parseInt(id, 10);
+    const staffId = id;
 
-    if (isNaN(staffId)) {
+    if (!staffId) {
       return NextResponse.json(
         { success: false, error: "Invalid staff ID" },
         { status: 400 }

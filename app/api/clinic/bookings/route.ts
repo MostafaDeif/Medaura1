@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 
     const response = await clinicService.getBookings(
       token,
-      clinicId ? parseInt(clinicId) : undefined
+      clinicId ? clinicId : undefined
     );
 
     return NextResponse.json({ success: true, data: response });

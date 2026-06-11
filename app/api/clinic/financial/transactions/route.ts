@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
 
   if (dateFrom) filters.dateFrom = dateFrom;
   if (dateTo) filters.dateTo = dateTo;
-  if (doctorId) filters.doctorId = parseInt(doctorId, 10);
+  if (doctorId) filters.doctorId = doctorId;
   if (specialist) filters.specialist = specialist;
 
   try {

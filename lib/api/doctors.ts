@@ -27,7 +27,7 @@ export const doctorService = {
     return apiClient.get<DoctorProfile[]>(endpoint);
   },
 
-  async getProfile(doctorId: number) {
+  async getProfile(doctorId: string | number) {
     return apiClient.get<DoctorProfile>(`/api/doctors/${doctorId}/profile`);
   },
 
@@ -42,7 +42,7 @@ export const doctorService = {
   },
 
   async updateProfile(
-    doctorId: number,
+    doctorId: string | number,
     data: Partial<DoctorProfile>,
     token: string
   ) {

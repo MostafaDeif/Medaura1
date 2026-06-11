@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const clinicIdParam = searchParams.get("clinic_id");
-  const clinicId = clinicIdParam ? parseInt(clinicIdParam, 10) : undefined;
+  const clinicId = clinicIdParam ? clinicIdParam : undefined;
 
   // ── Fetch authoritative booking count from the real endpoint ─────────────────
   const fetchTotalBookings = async (): Promise<number> => {

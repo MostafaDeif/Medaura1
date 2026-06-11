@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const numericId = parseInt(doctorId);
+    const numericId = doctorId;
     const response = await doctorService.getProfile(numericId);
 
     return NextResponse.json({

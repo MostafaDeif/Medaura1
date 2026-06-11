@@ -24,7 +24,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const response = await bookingService.cancelClinicBooking(
-      parseInt(bookingId),
+      bookingId,
       token
     );
 

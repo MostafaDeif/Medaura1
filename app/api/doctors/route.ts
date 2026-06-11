@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
 
     const query = {
       specialist: specialist || undefined,
-      clinic_id: clinicId ? parseInt(clinicId) : undefined,
+      clinic_id: clinicId ? clinicId : undefined,
       limit: limit ? parseInt(limit) : undefined,
     };
 

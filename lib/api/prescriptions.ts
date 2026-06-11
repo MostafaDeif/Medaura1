@@ -7,7 +7,7 @@ import type {
 } from "@/lib/types/api";
 
 export const prescriptionService = {
-  async requestAccess(bookingId: number, token: string) {
+  async requestAccess(bookingId: string | number, token: string) {
     return apiClient.post<PrescriptionAccess>(
       `/api/prescriptions/bookings/${bookingId}/request-access`,
       undefined,
@@ -16,7 +16,7 @@ export const prescriptionService = {
   },
 
   async respondAccess(
-    bookingId: number,
+    bookingId: string | number,
     data: PrescriptionActionRequest,
     token: string
   ) {
@@ -28,7 +28,7 @@ export const prescriptionService = {
   },
 
   async createPrescription(
-    bookingId: number,
+    bookingId: string | number,
     data: PrescriptionCreateRequest,
     token: string
   ) {
@@ -39,14 +39,14 @@ export const prescriptionService = {
     );
   },
 
-  async getAccessInfo(bookingId: number, token: string) {
+  async getAccessInfo(bookingId: string | number, token: string) {
     return apiClient.get<PrescriptionAccess>(
       `/api/prescriptions/bookings/${bookingId}/access`,
       { token }
     );
   },
 
-  async getPrescription(bookingId: number, token: string) {
+  async getPrescription(bookingId: string | number, token: string) {
     return apiClient.get<Prescription>(
       `/api/prescriptions/bookings/${bookingId}`,
       { token }
@@ -59,7 +59,7 @@ export const prescriptionService = {
     });
   },
 
-  async getPrescriptionById(prescriptionId: number, token: string) {
+  async getPrescriptionById(prescriptionId: string | number, token: string) {
     return apiClient.get<Prescription>(`/api/prescriptions/${prescriptionId}`, {
       token,
     });

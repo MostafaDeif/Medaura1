@@ -36,13 +36,13 @@ export async function PATCH(request: NextRequest) {
 
     let response;
     try {
-      response = await bookingService.cancelBooking(parseInt(bookingId), token);
+      response = await bookingService.cancelBooking(bookingId, token);
     } catch (error: unknown) {
       if (getStatus(error) !== 401) throw error;
       auth = await getServerAccessToken(request, { forceRefresh: true });
       token = auth.token;
       if (!token) throw error;
-      response = await bookingService.cancelBooking(parseInt(bookingId), token);
+      response = await bookingService.cancelBooking(bookingId, token);
     }
 
     const nextResponse = NextResponse.json({ success: true, data: response });

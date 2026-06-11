@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     }
 
     const response = await prescriptionService.getPrescriptionById(
-      parseInt(id),
+      id,
       token
     );
 

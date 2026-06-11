@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     let response;
     try {
       response = await notificationService.markAsReadByQuery(
-        parseInt(notificationId),
+        notificationId,
         auth.token
       );
     } catch (error: unknown) {
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       auth = await getServerAccessToken(request, { forceRefresh: true });
       if (!auth.token) throw error;
       response = await notificationService.markAsReadByQuery(
-        parseInt(notificationId),
+        notificationId,
         auth.token
       );
     }

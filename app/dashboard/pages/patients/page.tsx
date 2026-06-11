@@ -22,8 +22,8 @@ import {
 } from "lucide-react";
 
 type AdminPatient = {
-  patient_id: number;
-  user_id?: number;
+  patient_id: number | string;
+  user_id?: number | string;
   email?: string | null;
   full_name?: string | null;
   phone?: string | null;
@@ -53,7 +53,7 @@ function toNumber(value: unknown, fallback = 0) {
 
 function normalizePatient(rawPatient: unknown): AdminPatient {
   const patient = rawPatient as Partial<AdminPatient> & {
-    id?: number;
+    id?: number | string;
     name?: string | null;
     image?: string | null;
     img?: string | null;
@@ -62,8 +62,8 @@ function normalizePatient(rawPatient: unknown): AdminPatient {
   };
 
   return {
-    patient_id: toNumber(patient.patient_id ?? patient.id),
-    user_id: patient.user_id === undefined ? undefined : toNumber(patient.user_id),
+    patient_id: patient.patient_id ?? patient.id ?? 0,
+    user_id: patient.user_id === undefined ? undefined : patient.user_id,
     email: patient.email ?? null,
     full_name: patient.full_name ?? patient.name ?? null,
     phone: patient.phone ?? null,
@@ -111,7 +111,7 @@ export default function PatientsPage() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [pendingAction, setPendingAction] = useState<Record<number, boolean>>({});
+  const [pendingAction, setPendingAction] = useState<Record<string | number, boolean>>({});
 
   const handleToggleActive = useCallback(
     async (patient: AdminPatient, activate: boolean) => {

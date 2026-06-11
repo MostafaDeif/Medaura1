@@ -60,7 +60,7 @@ function toNumber(value: unknown, fallback: number) {
 }
 
 function normalizeClinic(clinic: ApiClinic, index: number): ClinicCardData | null {
-  const clinicId = toNumber(clinic.clinic_id ?? clinic.id, index + 1);
+  const clinicId = clinic.clinic_id ?? clinic.id ?? index + 1;
   const name = typeof clinic.name === "string" ? clinic.name : "";
   const location = typeof clinic.location === "string" ? clinic.location : "";
   const phone = typeof clinic.phone === "string" ? clinic.phone : "";

@@ -2,9 +2,9 @@ import { apiClient } from "./client";
 import type { Notification } from "@/lib/types/api";
 
 type BackendNotification = {
-  id?: number;
-  notification_id?: number;
-  user_id?: number;
+  id?: string;
+  notification_id?: string;
+  user_id?: string;
   title?: string;
   message?: string;
   read?: boolean;
@@ -39,8 +39,8 @@ function unwrapNotifications(data: unknown): unknown {
 
 function toNotification(item: BackendNotification): Notification {
   return {
-    id: item.id ?? item.notification_id ?? 0,
-    user_id: item.user_id ?? 0,
+    id: item.id ?? item.notification_id ?? "",
+    user_id: item.user_id ?? "",
     title: item.title ?? "",
     message: item.message ?? "",
     read: Boolean(item.read ?? item.is_read ?? false),
@@ -77,7 +77,7 @@ export const notificationService = {
     return normalizeNotifications(response);
   },
 
-  async markAsRead(notificationId: number, token: string) {
+  async markAsRead(notificationId: string | number, token: string) {
     return apiClient.patch(
       `/api/notifications/${notificationId}/read`,
       undefined,
@@ -85,7 +85,7 @@ export const notificationService = {
     );
   },
 
-  async markAsReadByQuery(notificationId: number, token: string) {
+  async markAsReadByQuery(notificationId: string | number, token: string) {
     return apiClient.post<Notification | any>(
       `/api/notifications/read?id=${notificationId}`,
       undefined,

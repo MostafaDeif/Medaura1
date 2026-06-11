@@ -156,7 +156,7 @@ function normalizeRatingItem(entry: unknown, index: number): RatingItem {
   }
 
   return {
-    rating_id: Number(entry.rating_id ?? entry.id ?? index + 1),
+    rating_id: entry.rating_id ?? entry.id ?? index + 1,
     rating: Number(entry.rating ?? 0),
     comment: typeof entry.comment === "string" ? entry.comment : "",
     patient_name:
@@ -289,7 +289,7 @@ function RatingStars({
 export default function DoctorProfilePage() {
   const params = useParams();
   const router = useRouter();
-  const doctorId = Number(params.id);
+  const doctorId = params.id;
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);

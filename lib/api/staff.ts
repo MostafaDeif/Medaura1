@@ -2,11 +2,11 @@ import { apiClient } from "./client";
 import type { StaffProfile, StaffCreateRequest } from "@/lib/types/api";
 
 export const staffService = {
-  async getProfile(staffId: number) {
+  async getProfile(staffId: string | number) {
     return apiClient.get<StaffProfile>(`/api/staff/${staffId}/profile`);
   },
 
-  async updateProfile(staffId: number, data: Partial<StaffProfile>, token: string) {
+  async updateProfile(staffId: string | number, data: Partial<StaffProfile>, token: string) {
     return apiClient.put<StaffProfile>(
       `/api/staff/${staffId}`,
       data,
@@ -18,7 +18,7 @@ export const staffService = {
     return apiClient.get(`/api/staff/my-clinic`, { token });
   },
 
-  async verify(staffId: number, token: string) {
+  async verify(staffId: string | number, token: string) {
     return apiClient.patch<unknown>(
       `/api/staff/${staffId}/verify`,
       undefined,
@@ -26,7 +26,7 @@ export const staffService = {
     );
   },
 
-  async unverify(staffId: number, token: string) {
+  async unverify(staffId: string | number, token: string) {
     return apiClient.patch<unknown>(
       `/api/staff/${staffId}/unverify`,
       undefined,
@@ -34,7 +34,7 @@ export const staffService = {
     );
   },
 
-  async deleteStaff(staffId: number, token: string) {
+  async deleteStaff(staffId: string | number, token: string) {
     return apiClient.delete<unknown>(
       `/api/staff/${staffId}/delete`,
       { token }

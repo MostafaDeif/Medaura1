@@ -253,8 +253,8 @@ export interface RatingResponse {
 
 // Notification Types
 export interface Notification {
-  id: number;
-  user_id: number;
+  id: string;
+  user_id: string;
   title: string;
   message: string;
   read: boolean;
