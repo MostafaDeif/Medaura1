@@ -21,9 +21,9 @@ import {
   Activity,
   AlertTriangle,
   CheckCircle,
-  XCircle,
   Info,
   Search,
+  Trash2,
 } from "lucide-react";
 import type { AuditLog, AuditStats } from "@/lib/types/api";
 
@@ -424,6 +424,28 @@ export default function AuditLogsPage() {
   const getRowId = (log: AuditLog, index: number) =>
     `${log.id ?? "log"}-${index}`;
 
+  const handleClearLogs = async () => {
+    if (!window.confirm("Are you sure you want to delete all audit logs? This action cannot be undone.")) return;
+    
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/audit-logs", {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (res.ok) {
+        clearFilters();
+      } else {
+        const data = await res.json().catch(() => null);
+        setError(data?.error || "Failed to clear logs");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to clear logs");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-5 pb-10">
       {/* ── Page header ─────────────────────────────────────────── */}
@@ -435,6 +457,14 @@ export default function AuditLogsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleClearLogs}
+            disabled={loading || logs.length === 0}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 text-sm font-medium transition disabled:opacity-50"
+          >
+            <Trash2 size={15} />
+            Clear Logs
+          </button>
           <button
             onClick={() => {
               setFiltersOpen((v) => !v);
@@ -993,7 +1023,7 @@ export default function AuditLogsPage() {
           <p className="text-xs text-[#5e6b85]">
             Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filteredLogs.length)} of {filteredLogs.length}
           </p>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5" dir="ltr">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
