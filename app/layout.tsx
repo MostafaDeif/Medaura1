@@ -24,6 +24,9 @@ export const metadata: Metadata = {
   title: "Medaura",
   description:
     "Your trusted healthcare booking platform. Find top doctors, clinics, and specialties with ease. Book appointments online and experience quality care at your fingertips.",
+  icons: {
+    icon: "/icon.png",
+  },
 };
 
 export default function RootLayout({

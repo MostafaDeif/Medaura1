@@ -329,7 +329,15 @@ export const adminService = {
       return res.logs;
     }
 
+    if (res.data && typeof res.data === "object" && "logs" in res.data && Array.isArray((res.data as Record<string, unknown>).logs)) {
+      return (res.data as Record<string, unknown>).logs as AuditLog[];
+    }
+
     return [];
+  },
+
+  async clearAuditLogs(token: string) {
+    return apiClient.delete<unknown>("/api/admin/audit-logs", { token });
   },
 
   async getAuditStats(token: string) {

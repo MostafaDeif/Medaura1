@@ -65,3 +65,40 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    let auth = await getServerAccessToken(request);
+
+    if (!auth.token) {
+      return NextResponse.json(
+        { success: false, error: "Not authenticated" },
+        { status: 401 }
+      );
+    }
+
+    try {
+      await adminService.clearAuditLogs(auth.token);
+    } catch (error: unknown) {
+      if (!isUnauthorized(error)) throw error;
+
+      auth = await getServerAccessToken(request, { forceRefresh: true });
+      if (!auth.token) throw error;
+      await adminService.clearAuditLogs(auth.token);
+    }
+
+    return applyAuthCookies(
+      NextResponse.json({ success: true, message: "Audit logs cleared successfully" }),
+      auth
+    );
+  } catch (error: unknown) {
+    console.error("Clear audit logs error:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: getErrorMessage(error, "Failed to clear audit logs"),
+      },
+      { status: getErrorStatus(error) }
+    );
+  }
+}

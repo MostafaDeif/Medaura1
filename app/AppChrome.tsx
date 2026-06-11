@@ -116,35 +116,7 @@ export default function AppChrome({ children }: { children: React.ReactNode }) {
 
     clearLocation();
 
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const params = new URLSearchParams({
-            latitude: String(position.coords.latitude),
-            longitude: String(position.coords.longitude),
-          });
-
-          loadLocationFromApi(`/api/location?${params.toString()}`)
-            .then((data) => {
-              cacheLocation({
-                ...data,
-                latitude: position.coords.latitude,
-                longitude: position.coords.longitude,
-              });
-            })
-            .catch(() => {
-              cacheLocation({
-                latitude: position.coords.latitude,
-                longitude: position.coords.longitude,
-              });
-            });
-        },
-        loadIpLocation,
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-      );
-    } else {
-      loadIpLocation();
-    }
+    loadIpLocation();
 
     window.addEventListener("medaura:refresh-location", loadIpLocation);
 

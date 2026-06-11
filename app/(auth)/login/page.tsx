@@ -39,11 +39,19 @@ export default function LoginPage() {
       const redirectPath = getDashboardPathByUserType(response.user_type);
       router.push(redirectPath);
     } catch (error) {
+      let errorMessage = "تعذر تسجيل الدخول، حاول مرة أخرى";
+      if (error instanceof Error) {
+        if (error.message.includes("Incorrect email or password")) {
+          errorMessage = "البريد الإلكتروني أو كلمة المرور غير صحيحة";
+        } else if (error.message.includes("Too many") || error.message.includes("rate limit")) {
+          errorMessage = "محاولات تسجيل دخول كثيرة جداً. يرجى المحاولة لاحقاً";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       setErrors({
-        form:
-          error instanceof Error
-            ? error.message
-            : "تعذر تسجيل الدخول، حاول مرة أخرى",
+        form: errorMessage,
       });
     } finally {
       setLoading(false);
@@ -114,7 +122,7 @@ export default function LoginPage() {
         error={errors.password}
       />
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <label className="flex items-center gap-2 text-sm text-zinc-600">
           <input
             type="checkbox"

@@ -129,12 +129,12 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
             </div>
 
             {/* NAVIGATION TABS */}
-            <nav className="flex items-center gap-2 bg-zinc-100 rounded-full p-1">
+            <nav className="flex w-full sm:w-auto items-center p-1 bg-zinc-100 rounded-full">
               {NAV_ITEMS.map((item) => (
                 <Link
                   key={item.key}
                   href={item.href}
-                  className={`px-4 py-2 rounded-full transition ${
+                  className={`flex-1 sm:flex-none text-center px-3 sm:px-4 py-2 rounded-full text-sm sm:text-base transition ${
                     activeNav === item.key
                       ? "bg-indigo-900 text-white"
                       : "text-zinc-700 hover:text-indigo-800"
@@ -147,22 +147,22 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
           </header>
 
           {/* CONTENT CONTAINER */}
-          <div className="border border-zinc-100 rounded-lg p-6 shadow-sm">
+          <div className="border border-zinc-100 rounded-lg p-4 sm:p-6 shadow-sm">
             {/* REGISTER ACCOUNT TYPE SELECTOR */}
             {isRegisterPage && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+              <div className="grid grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-3 mb-6">
                 {REGISTER_TYPES.map((type) => (
                   <Link
                     key={type.key}
                     href={type.href}
-                    className={`p-2 sm:p-3 rounded-lg border flex items-center justify-center gap-2 w-full transition-all duration-300 hover:-translate-y-1 hover:shadow-md ${
+                    className={`p-2 rounded-lg border flex items-center justify-center gap-1.5 sm:gap-2 w-full transition-all duration-300 hover:-translate-y-1 hover:shadow-md ${
                       activeType === type.key
                         ? "border-indigo-700 bg-indigo-50 shadow-md"
                         : "border-zinc-100 hover:border-indigo-300"
                     }`}
                   >
-                    <span className="text-sm md:text-base font-medium flex items-center gap-1">
-                      <span>{type.label}</span>
+                    <span className="text-xs sm:text-sm font-medium flex items-center gap-1">
+                      <span className="truncate">{type.label}</span>
                       {type.key !== "patient" && (
                         <img
                           src={`/images/${type.icon}.png`}
