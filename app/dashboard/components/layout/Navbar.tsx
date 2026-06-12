@@ -255,7 +255,7 @@ function Navbar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
             </button>
 
             {notifOpen && (
-              <div className="absolute ltr:right-0 rtl:left-0 mt-2 w-80 sm:w-96 bg-white border border-[#e6eaf0] rounded-2xl shadow-2xl z-50 overflow-hidden">
+              <div className="absolute ltr:right-[-80px] rtl:left-[-80px] sm:ltr:right-0 sm:rtl:left-0 mt-2 w-[300px] sm:w-96 max-w-[calc(100vw-2rem)] bg-white border border-[#e6eaf0] rounded-2xl shadow-2xl z-50 overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-[#e6eaf0]">
                   <div className="flex items-center gap-2">
@@ -393,7 +393,7 @@ function Navbar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
             </button>
 
             {profileOpen && (
-              <div className="absolute ltr:right-0 rtl:left-0 top-full mt-2 w-52 bg-white border border-[#e6eaf0] rounded-2xl shadow-xl z-50 overflow-hidden">
+              <div className="absolute ltr:right-[-20px] rtl:left-[-20px] sm:ltr:right-0 sm:rtl:left-0 top-full mt-2 w-48 sm:w-52 bg-white border border-[#e6eaf0] rounded-2xl shadow-xl z-50 overflow-hidden">
                 {/* Profile header */}
                 <div className="flex items-center gap-3 px-4 py-3 bg-[#f6f8fb] border-b border-[#e6eaf0]">
                   {avatarSrc && avatarSrc !== "/images/blank-profile-picture.png" ? (

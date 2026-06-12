@@ -11,7 +11,7 @@ const API_BASE_URL = "/api";
 const RATINGS_PAGE_SIZE = 4;
 
 type ClinicDoctor = {
-  staff_id: number;
+  staff_id: string | number;
   full_name: string;
   role_title: string;
   specialist: string;
@@ -32,7 +32,7 @@ type GeoLocation = {
 };
 
 type ClinicProfileData = {
-  clinic_id: number;
+  clinic_id: string | number;
   name: string;
   location: string;
   phone: string;
@@ -79,6 +79,12 @@ function toNumber(value: unknown, fallback: number) {
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
+}
+
+function getSafeId(value: unknown, fallback: string | number): string | number {
+  if (typeof value === "string" && value.trim() !== "") return value;
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  return fallback;
 }
 
 function getPayloadMessage(payload: unknown, fallback: string) {
@@ -151,11 +157,11 @@ function normalizeRatingsPayload(payload: unknown) {
 
 function normalizeClinic(
   value: unknown,
-  fallbackId: number,
+  fallbackId: string | number,
 ): ClinicProfileData | null {
   if (!isRecord(value)) return null;
 
-  const clinicId = toNumber(value.clinic_id ?? value.id, fallbackId);
+  const clinicId = getSafeId(value.clinic_id ?? value.id, fallbackId);
   const name = typeof value.name === "string" ? value.name : "";
   const location = typeof value.location === "string" ? value.location : "";
   const phone = typeof value.phone === "string" ? value.phone : "";
@@ -206,7 +212,7 @@ function normalizeDoctors(value: unknown): ClinicDoctor[] {
     const yearsOfExperience = toNumber(entry.years_of_experience, 0);
 
     doctors.push({
-      staff_id: toNumber(entry.staff_id ?? entry.id, index + 1),
+      staff_id: getSafeId(entry.staff_id ?? entry.id, index + 1),
       full_name:
         typeof entry.full_name === "string"
           ? entry.full_name
@@ -350,7 +356,7 @@ export default function ClinicDetailsPage() {
           ? (unwrapped.doctors ?? unwrapped.staff ?? [])
           : [];
 
-        setClinicProfile(normalizeClinic(clinicSource, Number(clinicId)));
+        setClinicProfile(normalizeClinic(clinicSource, clinicId as string));
         setDoctors(normalizeDoctors(doctorsSource));
       } catch (error: unknown) {
         console.error("Clinic profile fetch error:", error);

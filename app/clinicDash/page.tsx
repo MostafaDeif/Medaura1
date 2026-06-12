@@ -17,6 +17,7 @@ import StaffTable from "./features/staff/StaffTable";
 import PendingRequests from "./features/staff/PendingRequests";
 import CreateStaffModal from "./features/staff/CreateStaffModal";
 import StatsSection from "./features/stats/StatsSection";
+import ProviderBookingModal from "@/app/components/ui/ProviderBookingModal";
 import type { ClinicMyStats } from "@/lib/types/api";
 import type { StaffMember } from "./features/staff/StaffTable";
 import type { PendingStaffMember } from "./features/staff/PendingRequests";
@@ -124,6 +125,7 @@ export default function ClinicDashPage() {
 
   const [verifyingId, setVerifyingId] = useState<string | number | null>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"all" | "pending">("all");
   const [refreshKey, setRefreshKey] = useState(0);
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
@@ -302,6 +304,13 @@ export default function ClinicDashPage() {
               className={isSpinning || statsLoading ? "animate-spin" : ""}
             />
             تحديث
+          </button>
+          <button
+            onClick={() => setIsBookingModalOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-[#1F2B6C] text-[#1F2B6C] bg-transparent text-sm font-semibold hover:bg-[#1F2B6C] hover:text-white transition shadow-sm"
+          >
+            <CalendarCheck size={15} />
+            حجز جديد
           </button>
           <button
             id="open-create-staff-modal"
@@ -494,8 +503,17 @@ export default function ClinicDashPage() {
           key={lastBooking.timestamp}
           booking={lastBooking}
           onDismiss={() => setShowToast(false)}
+          onSuccess={loadData}
         />
       )}
+      
+      <ProviderBookingModal
+        isOpen={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
+        role="clinic"
+        staffMembers={staff.filter(isDoctorStaffRecord)}
+        onSuccess={handleRefresh}
+      />
     </div>
   );
 }

@@ -10,9 +10,10 @@ import ClinicsList from "./features/patient/PatientReport";
 import DepartmentsChart from "./components/charts/DepartmentsChart";
 import PatientsTable from "./features/patient/PatientTaple";
 import AppointmentsTable from "./features/appointments/AppointmentsTable";
+import ProviderBookingModal from "@/app/components/ui/ProviderBookingModal";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Calendar, User } from "lucide-react";
+import { Calendar, User, Plus } from "lucide-react";
 
 type DashboardApiData = {
   cards?: {
@@ -76,6 +77,7 @@ type DashboardApiData = {
 
 function Dashboard({ childern }: { childern: React.ReactNode }) {
   const [range, setRange] = useState<any>();
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [dashboardData, setDashboardData] = useState<DashboardApiData | null>(
     null,
   );
@@ -205,10 +207,29 @@ function Dashboard({ childern }: { childern: React.ReactNode }) {
           </div>
           {/* Appointments */}
           <div className="grid grid-cols-1 gap-5">
+            <div className="flex justify-between items-center bg-(--card-bg) p-4 rounded-2xl shadow-[var(--shadow-soft)] border border-(--card-border)">
+              <h2 className="text-lg font-bold text-(--text-primary)">الحجوزات</h2>
+              <button
+                onClick={() => setIsBookingModalOpen(true)}
+                className="flex items-center gap-2 bg-[#1F2B6C] hover:bg-[#151F52] text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors"
+              >
+                <Plus size={16} />
+                حجز جديد
+              </button>
+            </div>
             <AppointmentsTable appointments={dashboardData?.appointments?.slice(0, 5)} />
           </div>
         </div>
       </div>
+      <ProviderBookingModal
+        isOpen={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
+        role="doctor"
+        onSuccess={() => {
+          // You might want to refresh data here
+          window.location.reload();
+        }}
+      />
     </div>
   );
 }

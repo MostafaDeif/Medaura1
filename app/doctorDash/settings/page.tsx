@@ -16,7 +16,11 @@ import {
   DollarSign,
   ChevronLeft,
   FileText,
+  Lock,
+  Eye,
+  EyeOff,
 } from "lucide-react";
+import Swal from "sweetalert2";
 import { useAuth } from "@/context/AuthContext";
 import EditProfileForm, { DoctorEditableProfile } from "./EditProfileForm";
 
@@ -224,6 +228,89 @@ export default function DoctorSettingsPage() {
       });
     }
   };
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordUpdating, setPasswordUpdating] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      Swal.fire({
+        icon: "error",
+        title: "خطأ",
+        text: "الرجاء تعبئة جميع حقول كلمة المرور",
+        confirmButtonText: "موافق",
+      });
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      Swal.fire({
+        icon: "error",
+        title: "خطأ",
+        text: "يجب أن تتكون كلمة المرور من 8 أحرف على الأقل",
+        confirmButtonText: "موافق",
+      });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      Swal.fire({
+        icon: "error",
+        title: "خطأ",
+        text: "كلمة المرور الجديدة وتأكيدها غير متطابقتين",
+        confirmButtonText: "موافق",
+      });
+      return;
+    }
+
+    try {
+      setPasswordUpdating(true);
+      const response = await fetch("/api/user/change-password", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user?.token || ""}`,
+        },
+        body: JSON.stringify({
+          current_password: currentPassword,
+          new_password: newPassword,
+          confirm_password: confirmPassword,
+        }),
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "فشل تغيير كلمة المرور");
+      }
+
+      Swal.fire({
+        icon: "success",
+        title: "تم بنجاح",
+        text: "تم تغيير كلمة المرور بنجاح",
+        confirmButtonText: "رائع",
+      });
+
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      Swal.fire({
+        icon: "error",
+        title: "فشل التغيير",
+        text: err.message || "حدث خطأ أثناء تغيير كلمة المرور",
+        confirmButtonText: "موافق",
+      });
+    } finally {
+      setPasswordUpdating(false);
+    }
+  };
+
 
   if (loading) {
     return (
@@ -891,8 +978,92 @@ export default function DoctorSettingsPage() {
               />
             </div>
           </div>
+
+          {/* ── CHANGE PASSWORD CARD ── */}
+          <div className="ds-card mt-6">
+            <div className="ds-section-header">
+              <div className="ds-section-icon">
+                <Lock size={16} color="#0d9488" />
+              </div>
+              <h3 className="ds-section-title">تغيير كلمة المرور</h3>
+              <div className="ds-section-line" />
+            </div>
+
+            <form onSubmit={handleChangePassword} className="space-y-4 p-4">
+              <div className="space-y-4 max-w-lg mx-auto">
+                <div className="relative">
+                  <input
+                    type={showCurrentPassword ? "text" : "password"}
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="كلمة المرور الحالية"
+                    className="w-full px-4 py-3 rounded-xl border border-[var(--ds-teal-border)] bg-transparent text-[var(--ds-text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--ds-teal)] transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[var(--ds-teal)] cursor-pointer"
+                  >
+                    {showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="كلمة المرور الجديدة"
+                    className="w-full px-4 py-3 rounded-xl border border-[var(--ds-teal-border)] bg-transparent text-[var(--ds-text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--ds-teal)] transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[var(--ds-teal)] cursor-pointer"
+                  >
+                    {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="تأكيد كلمة المرور"
+                    className="w-full px-4 py-3 rounded-xl border border-[var(--ds-teal-border)] bg-transparent text-[var(--ds-text-primary)] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--ds-teal)] transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[var(--ds-teal)] cursor-pointer"
+                  >
+                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex justify-center mt-6">
+                <button
+                  type="submit"
+                  disabled={passwordUpdating}
+                  className="ds-edit-btn max-w-sm w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed justify-center"
+                >
+                  {passwordUpdating ? (
+                    <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Lock size={16} />
+                      تحديث كلمة المرور
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </>
+
   );
 }

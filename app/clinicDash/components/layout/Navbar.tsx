@@ -201,7 +201,7 @@ function Navbar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
                 </button>
 
                 {notifOpen && (
-                  <div className="absolute left-0 mt-2 w-80 bg-(--card-bg) border border-(--card-border) rounded-2xl shadow-[var(--shadow-soft)] p-3 z-40 backdrop-blur-md">
+                  <div className="absolute left-[-80px] sm:left-0 mt-2 w-[300px] sm:w-80 max-w-[calc(100vw-2rem)] bg-(--card-bg) border border-(--card-border) rounded-2xl shadow-[var(--shadow-soft)] p-3 z-40 backdrop-blur-md">
                     <div className="flex items-center justify-between px-2 mb-2">
                       <h4 className="font-semibold text-(--text-primary) text-sm">
                         الإشعارات
@@ -292,7 +292,7 @@ function Navbar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
                 </button>
 
                 {profileOpen && (
-                  <div className="absolute left-0 top-full mt-2 w-52 bg-(--card-bg) border border-(--card-border) rounded-2xl shadow-[var(--shadow-soft)] p-2 z-50 backdrop-blur-sm">
+                  <div className="absolute left-[-20px] sm:left-0 top-full mt-2 w-48 sm:w-52 bg-(--card-bg) border border-(--card-border) rounded-2xl shadow-[var(--shadow-soft)] p-2 z-50 backdrop-blur-sm">
                     <div className="flex items-center gap-3 px-3 py-2">
                       <img
                         src={avatarSrc}

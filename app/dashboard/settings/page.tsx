@@ -17,9 +17,17 @@ import Swal from "sweetalert2";
 export default function AdminSettingsPage() {
   const { user, loading, updateUser } = useAuth();
   
-  // Profile Update States
   const [profileName, setProfileName] = useState("");
   const [profileUpdating, setProfileUpdating] = useState(false);
+
+  // Change Password States
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordUpdating, setPasswordUpdating] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Photo States
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -146,6 +154,82 @@ export default function AdminSettingsPage() {
       setProfileUpdating(false);
     }
   };
+
+  // Handle Password Change
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      Swal.fire({
+        icon: "error",
+        title: "خطأ",
+        text: "الرجاء تعبئة جميع حقول كلمة المرور",
+        confirmButtonText: "موافق",
+      });
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      Swal.fire({
+        icon: "error",
+        title: "خطأ",
+        text: "يجب أن تتكون كلمة المرور من 8 أحرف على الأقل",
+        confirmButtonText: "موافق",
+      });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      Swal.fire({
+        icon: "error",
+        title: "خطأ",
+        text: "كلمة المرور الجديدة وتأكيدها غير متطابقتين",
+        confirmButtonText: "موافق",
+      });
+      return;
+    }
+
+    try {
+      setPasswordUpdating(true);
+      const response = await fetch("/api/user/change-password", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user?.token || ""}`,
+        },
+        body: JSON.stringify({
+          current_password: currentPassword,
+          new_password: newPassword,
+          confirm_password: confirmPassword,
+        }),
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "فشل تغيير كلمة المرور");
+      }
+
+      Swal.fire({
+        icon: "success",
+        title: "تم بنجاح",
+        text: "تم تغيير كلمة المرور بنجاح",
+        confirmButtonText: "رائع",
+      });
+
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      Swal.fire({
+        icon: "error",
+        title: "فشل التغيير",
+        text: err.message || "حدث خطأ أثناء تغيير كلمة المرور",
+        confirmButtonText: "موافق",
+      });
+    } finally {
+      setPasswordUpdating(false);
+    }
+  };
+
 
   // Handle Create Admin
   const handleCreateAdmin = async (e: React.FormEvent) => {
@@ -309,7 +393,88 @@ export default function AdminSettingsPage() {
                 )}
               </button>
             </form>
+
+            <hr className="border-(--card-border)" />
+
+            {/* Change Password Form */}
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <div className="flex items-center gap-2 text-sm font-bold text-(--text-primary)">
+                <div className="w-6 h-6 rounded-lg bg-[#EBF2F9] flex items-center justify-center text-[#1F2B6C]">
+                  <Lock size={13} />
+                </div>
+                <span>تغيير كلمة المرور</span>
+              </div>
+
+              <div className="space-y-3">
+                <div className="relative">
+                  <input
+                    type={showCurrentPassword ? "text" : "password"}
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="كلمة المرور الحالية"
+                    className="w-full px-4 py-2.5 rounded-xl border border-(--input-border) bg-(--input2-bg) text-sm text-(--text-primary) placeholder-[#a0aab8] focus:outline-none focus:ring-2 focus:ring-[#1F2B6C]/20 focus:border-[#1F2B6C] transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-(--text-secondary) hover:text-(--text-primary) cursor-pointer"
+                  >
+                    {showCurrentPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="كلمة المرور الجديدة"
+                    className="w-full px-4 py-2.5 rounded-xl border border-(--input-border) bg-(--input2-bg) text-sm text-(--text-primary) placeholder-[#a0aab8] focus:outline-none focus:ring-2 focus:ring-[#1F2B6C]/20 focus:border-[#1F2B6C] transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-(--text-secondary) hover:text-(--text-primary) cursor-pointer"
+                  >
+                    {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="تأكيد كلمة المرور"
+                    className="w-full px-4 py-2.5 rounded-xl border border-(--input-border) bg-(--input2-bg) text-sm text-(--text-primary) placeholder-[#a0aab8] focus:outline-none focus:ring-2 focus:ring-[#1F2B6C]/20 focus:border-[#1F2B6C] transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-(--text-secondary) hover:text-(--text-primary) cursor-pointer"
+                  >
+                    {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={passwordUpdating}
+                className="w-full py-2.5 px-4 bg-(--input2-bg) hover:bg-[#e6eaf0] text-(--text-primary) border border-(--card-border) text-sm font-semibold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {passwordUpdating ? (
+                  <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Lock size={16} />
+                    تحديث كلمة المرور
+                  </>
+                )}
+              </button>
+            </form>
           </div>
+
         </div>
 
         {/* Right Column: Add Admin Form */}

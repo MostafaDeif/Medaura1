@@ -258,7 +258,7 @@ const Navbar: FC = () => {
                 </button>
 
                 {notifOpen && (
-                  <div className="absolute right-0 top-[calc(100%+10px)] z-50 w-[300px] overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-[0_16px_48px_rgba(15,26,79,0.18)] sm:w-[340px]">
+                  <div className="fixed left-1/2 -translate-x-1/2 top-[70px] sm:absolute sm:left-auto sm:translate-x-0 sm:ltr:right-0 sm:rtl:left-0 sm:top-[calc(100%+10px)] z-50 w-[90vw] max-w-[340px] overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-[0_16px_48px_rgba(15,26,79,0.18)]">
                     {/* Notif header */}
                     <div className="flex items-center justify-between border-b border-zinc-100 bg-[#f5f7ff] px-4 py-3">
                       <div className="flex items-center gap-2">
@@ -394,7 +394,7 @@ const Navbar: FC = () => {
                 </button>
 
                 {userMenuOpen && (
-                  <div className="absolute right-0 top-[calc(100%+10px)] z-50 w-52 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-[0_16px_48px_rgba(15,26,79,0.18)]">
+                  <div className="absolute ltr:right-[-20px] rtl:left-[-20px] sm:ltr:right-0 sm:rtl:left-0 top-[calc(100%+10px)] z-50 w-52 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-[0_16px_48px_rgba(15,26,79,0.18)]">
                     {/* User info card */}
                     <div className="flex items-center gap-3 border-b border-zinc-100 bg-[#f5f7ff] px-4 py-3">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-[#c5d0f0] bg-white">

@@ -1,57 +1,139 @@
-# Medaura - Healthcare Booking Platform
+﻿# Medaura — Medical Booking Platform
 
-**Medaura** is a comprehensive healthcare booking platform built with Next.js 16, featuring patient and provider dashboards, clinic management, and appointment scheduling.
+Medaura is a modern, Arabic-first healthcare booking platform that connects patients with doctors, clinics, and medical specialists across Egypt. It provides a seamless experience for booking appointments, managing medical records, and communicating with healthcare providers.
 
-## 🎯 Project Overview
+---
 
-- **Admin Dashboard**: `/dashboard` - Comprehensive system overview and management
-- **Doctor Dashboard**: `/doctorDash` - Doctor-specific appointments and patient management  
-- **Patient Portal**: Home page and clinic/doctor discovery
-- **Appointment System**: Full booking and scheduling functionality
+## Tech Stack
 
-## 🚀 Recent Updates (Dashboard Integration)
+| Layer       | Technology                                      |
+|-------------|------------------------------------------------|
+| Frontend    | Next.js 16 (App Router), TypeScript, Tailwind CSS |
+| Auth        | JWT (access + refresh tokens), HttpOnly cookies |
+| API Pattern | Backend-for-Frontend (BFF) — Next.js API routes proxy to the Clynk backend |
+| Backend     | [Clynk](https://github.com/Mohamed-Khayyal/Clynk) — Node.js / Express / MongoDB |
+| Deployment  | Vercel (frontend) + Vercel Serverless (backend) |
+| Fonts       | Google Fonts — Cairo (Arabic), Geist (Latin)   |
+| UI          | Framer Motion, Swiper, SweetAlert2, Lucide Icons |
 
-✨ Successfully integrated **medurapro** dashboard into the main project:
-- ✅ Admin Dashboard (Admin Panel)
-- ✅ Doctor Dashboard (Provider Panel)
-- ✅ Dark/Light Theme System with localStorage persistence
-- ✅ Advanced charting with ApexCharts & Recharts
-- ✅ Responsive Sidebar & Navbar components
-- ✅ RTL (Right-to-Left) Arabic support
+---
 
-**See [DASHBOARD_GUIDE.md](./DASHBOARD_GUIDE.md) for detailed dashboard documentation.**
+## Features
+
+### Patient
+- Browse doctors and clinics by specialty, rating, price, and location
+- View full doctor profiles with ratings, availability, and pricing
+- Book appointments by selecting a date and available time slot
+- View and manage upcoming and past appointments
+- Request prescription access from their doctor
+- Rate and review doctors after visits
+- Real-time booking notifications
+
+### Doctor / Staff
+- Personal dashboard with appointment statistics and weekly charts
+- View today's appointments and patient lists
+- Manage prescription requests
+- Profile settings (photo, specialty, pricing, working hours)
+
+### Clinic Owner
+- Clinic dashboard with staff management
+- Approve or reject staff members
+- View clinic bookings and financial summaries
+- Profit-sharing and transaction reports
+
+### Admin
+- Full user management (doctors, staff, clinics, patients)
+- Verify or reject doctor and clinic registrations
+- Audit log dashboard with IP geolocation, actor identity, and request history
+- Real-time audit stats
+
+---
+
+## Project Structure
+
+```
+medaura/
+├── app/
+│   ├── (auth)/          # Login, Register, Forgot Password pages
+│   ├── (site)/          # Public patient-facing pages
+│   │   ├── doctors/     # Doctor listing + [id] profile page
+│   │   ├── clinics/     # Clinic listing + [id] page
+│   │   ├── specialties/ # Specialty browser
+│   │   └── appointments/
+│   ├── api/             # BFF API route handlers (proxy to Clynk backend)
+│   ├── dashboard/       # Admin dashboard
+│   ├── doctorDash/      # Doctor dashboard
+│   ├── clinicDash/      # Clinic owner dashboard
+│   └── providers/       # ThemeProvider, AuthContext
+├── components/
+│   ├── home/            # Homepage sections (Hero, BestDoctors, Specialties...)
+│   ├── booking/         # DatePicker, TimePicker, ValidationModal
+│   └── ui/              # Shared UI components
+├── lib/
+│   ├── api/             # API service clients (doctors, clinics, auth...)
+│   ├── types/           # TypeScript type definitions
+│   └── utils/           # Helpers and error handlers
+├── locales/             # Arabic / English translation strings (i18n)
+├── context/             # Auth context
+└── public/              # Static assets (images, logo)
+```
+
+---
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+- Node.js 18+
+- A running instance of the [Clynk backend](https://github.com/Mohamed-Khayyal/Clynk)
+
+### Setup
+
+```bash
+# Install dependencies
+npm install
+```
+
+### Environment Variables
+
+Create a `.env.local` file:
+
+```env
+NEXT_PUBLIC_BACKEND_URL=https://your-clynk-backend.vercel.app
+```
+
+### Run locally
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deployment
 
-## Learn More
+The app is deployed on **Vercel** and automatically deploys on every push to `main`.
 
-To learn more about Next.js, take a look at the following resources:
+- **Frontend (Medaura):** https://medaura-pi.vercel.app
+- **Backend (Clynk):** https://clynk.vercel.app
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+> TypeScript and ESLint build errors are intentionally suppressed in `next.config.js` to allow deployment while the codebase is actively being refactored. This does not affect runtime behavior.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## API Architecture (BFF Pattern)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+All frontend pages call `/api/*` routes inside Next.js. These route handlers act as a secure proxy:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Read the authenticated user cookie (`jwt`)
+2. Forward the request — including the real client IP via `x-forwarded-for` — to the Clynk backend
+3. Return the response to the browser
+
+This ensures backend API keys, tokens, and credentials are never exposed to the browser.
+
+---
+
+## License
+
+Proprietary — All rights reserved © 2025 Mohamed Khayyal.

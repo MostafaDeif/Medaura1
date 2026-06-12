@@ -29,11 +29,21 @@ export class ApiClient {
 
     const headers = new Headers(fetchOptions.headers);
     
-    // Forward incoming client GPS/location headers from the browser's request
+    // Forward the real client IP and GPS/location headers from the browser's request
     if (typeof window === "undefined") {
       try {
         const { headers: nextHeadersFn } = require("next/headers");
         const nextHeaders = await nextHeadersFn();
+
+        // Forward the real client IP so the backend logs the user's IP, not Vercel's server IP.
+        // Vercel sets x-forwarded-for on every incoming request with the actual client IP.
+        const forwardedFor = nextHeaders.get("x-forwarded-for");
+        const realIp = nextHeaders.get("x-real-ip");
+
+        if (forwardedFor) headers.set("x-forwarded-for", forwardedFor);
+        if (realIp) headers.set("x-real-ip", realIp);
+
+        // Forward GPS/location headers if provided by the browser
         const lat = nextHeaders.get("x-client-latitude");
         const lon = nextHeaders.get("x-client-longitude");
         const city = nextHeaders.get("x-client-city");
