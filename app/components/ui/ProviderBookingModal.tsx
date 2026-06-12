@@ -3,16 +3,28 @@
 import React, { useState, useEffect } from "react";
 import { X, Calendar, User, Clock, Phone, Stethoscope } from "lucide-react";
 import Swal from "sweetalert2";
+import DatePicker from "@/components/booking/DatePicker";
+import TimePicker from "@/components/booking/TimePicker";
+import { useAuth } from "@/context/AuthContext";
+
+function parseWorkDays(workDaysString?: string): string[] | undefined {
+  if (!workDaysString) return undefined;
+  return workDaysString
+    .split(/[,/|]/)
+    .map((day) => day.trim().toLowerCase())
+    .filter(Boolean);
+}
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
   role: "doctor" | "clinic";
-  staffMembers?: { _id: string; full_name: string }[];
+  staffMembers?: { _id?: string | number; staff_id?: string | number; id?: string | number; full_name?: string; work_days?: string }[];
   onSuccess?: () => void;
 };
 
 export default function ProviderBookingModal({ isOpen, onClose, role, staffMembers = [], onSuccess }: Props) {
+  const { user } = useAuth();
   const [patientName, setPatientName] = useState("");
   const [patientPhone, setPatientPhone] = useState("");
   const [bookingDate, setBookingDate] = useState("");
@@ -21,6 +33,18 @@ export default function ProviderBookingModal({ isOpen, onClose, role, staffMembe
   const [loading, setLoading] = useState(false);
   const [availableSlots, setAvailableSlots] = useState<{ from: string; to: string }[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+
+  const allowedDays = React.useMemo(() => {
+    if (role === "doctor") {
+      return parseWorkDays(user?.profile?.work_days as string);
+    } else if (role === "clinic" && staffId) {
+      const selected = staffMembers.find((s) => String(s._id || s.staff_id || s.id) === String(staffId));
+      return parseWorkDays(selected?.work_days);
+    }
+    return undefined;
+  }, [role, user, staffId, staffMembers]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -197,45 +221,29 @@ export default function ProviderBookingModal({ isOpen, onClose, role, staffMembe
                 <Calendar size={16} className="text-teal-500" />
                 تاريخ الحجز (مطلوب)
               </label>
-              <input
-                type="date"
-                min={new Date().toISOString().split("T")[0]}
-                value={bookingDate}
-                onChange={(e) => setBookingDate(e.target.value)}
-                className="w-full rounded-xl border border-(--input-border) bg-(--input-bg) px-4 py-3 text-sm text-(--text-primary) transition focus:border-teal-400 focus:ring-4 focus:ring-teal-50 focus:outline-none"
-                required
-              />
+              <button
+                type="button"
+                onClick={() => setShowDatePicker(true)}
+                disabled={role === "clinic" && !staffId}
+                className="w-full text-right rounded-xl border border-(--input-border) bg-(--input-bg) px-4 py-3 text-sm text-(--text-primary) transition hover:border-teal-400 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {bookingDate || "اختر التاريخ"}
+              </button>
             </div>
 
             <div>
               <label className="flex items-center gap-2 text-sm font-semibold text-(--text-primary) mb-2">
                 <Clock size={16} className="text-teal-500" />
-                الوقت المتاح
+                الوقت (مطلوب)
               </label>
-              {loadingSlots ? (
-                <div className="text-sm text-gray-500 text-center py-2 animate-pulse">جاري جلب المواعيد المتاحة...</div>
-              ) : availableSlots.length > 0 ? (
-                <div className="grid grid-cols-3 gap-2 max-h-32 overflow-y-auto pr-1">
-                  {availableSlots.map((slot, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => setBookingFrom(slot.from)}
-                      className={`py-2 px-3 text-xs rounded-lg border font-semibold transition-all ${
-                        bookingFrom === slot.from
-                          ? "bg-teal-500 text-white border-teal-500 shadow-md"
-                          : "bg-(--hover-bg) text-(--text-primary) border-(--card-border) hover:border-teal-400"
-                      }`}
-                    >
-                      {slot.from}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-sm text-red-500 text-center bg-red-50 py-3 rounded-xl border border-red-100">
-                  {bookingDate ? "لا توجد مواعيد متاحة في هذا اليوم" : "يرجى اختيار التاريخ أولاً"}
-                </div>
-              )}
+              <button
+                type="button"
+                onClick={() => setShowTimePicker(true)}
+                disabled={!bookingDate}
+                className="w-full text-right rounded-xl border border-(--input-border) bg-(--input-bg) px-4 py-3 text-sm text-(--text-primary) transition hover:border-teal-400 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {bookingFrom || "اختر الوقت"}
+              </button>
             </div>
           </div>
 
@@ -257,6 +265,31 @@ export default function ProviderBookingModal({ isOpen, onClose, role, staffMembe
           </div>
         </form>
       </div>
+
+      {showDatePicker && (
+        <DatePicker
+          selectedDate={bookingDate}
+          allowedDays={allowedDays}
+          onSelect={(date) => {
+            setBookingDate(date);
+            setBookingFrom("");
+            setShowDatePicker(false);
+          }}
+          onClose={() => setShowDatePicker(false)}
+        />
+      )}
+
+      {showTimePicker && (
+        <TimePicker
+          slots={availableSlots.map((s) => ({ ...s, available: true }))}
+          loading={loadingSlots}
+          onSelect={(time) => {
+            setBookingFrom(time);
+            setShowTimePicker(false);
+          }}
+          onClose={() => setShowTimePicker(false)}
+        />
+      )}
     </div>
   );
 }
