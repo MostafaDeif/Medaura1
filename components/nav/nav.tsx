@@ -216,7 +216,7 @@ const Navbar: FC = () => {
         </Link>
 
         {/* Center: Desktop nav links */}
-        <ul className="hidden items-center gap-5 lg:flex">
+        <ul className="hidden items-center gap-5 xl:flex">
           {navItems.map((item) => (
             <li key={item.href}>
               <Link
@@ -487,7 +487,7 @@ const Navbar: FC = () => {
               setNotifOpen(false);
               setUserMenuOpen(false);
             }}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-[#c5d0f0] bg-white text-[#0f1a4f] transition hover:bg-[#d9e3ff] lg:hidden"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-[#c5d0f0] bg-white text-[#0f1a4f] transition hover:bg-[#d9e3ff] xl:hidden"
             aria-label={mobileOpen ? "إغلاق القائمة" : "فتح القائمة"}
           >
             {mobileOpen ? (
@@ -501,7 +501,7 @@ const Navbar: FC = () => {
 
       {/* ── Mobile drawer ── */}
       <div
-        className={`overflow-hidden border-t border-[#d9e3ff] transition-[max-height,opacity] duration-300 ease-in-out lg:hidden ${
+        className={`overflow-hidden border-t border-[#d9e3ff] transition-[max-height,opacity] duration-300 ease-in-out xl:hidden ${
           mobileOpen ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
         }`}
       >
