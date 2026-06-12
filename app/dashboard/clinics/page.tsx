@@ -261,13 +261,13 @@ export default function ClinicRequests() {
       {/* ── Main ── */}
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Toolbar */}
-        <div className="bg-white border-b border-gray-100 px-6 py-3 flex items-center gap-3">
-          <div className="flex gap-1 flex-1">
+        <div className="bg-white border-b border-gray-100 px-4 sm:px-6 py-3 flex flex-col md:flex-row md:items-center gap-3">
+          <div className="flex flex-wrap gap-1.5 flex-1 w-full md:w-auto justify-end md:justify-start">
             {tabs.map((t) => (
               <button
                 key={t.key}
                 onClick={() => setFilter(t.key)}
-                className={`px-4 py-2 rounded-lg text-sm transition-colors ${
+                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm transition-colors ${
                   filter === t.key
                     ? "bg-[#1A3A9C] text-white"
                     : "text-gray-500 hover:bg-gray-100"
@@ -277,7 +277,7 @@ export default function ClinicRequests() {
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 w-56">
+          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 w-full md:w-56">
             <Search size={15} className="text-gray-400 flex-shrink-0" />
             <input
               value={search}
