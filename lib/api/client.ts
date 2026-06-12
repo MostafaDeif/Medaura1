@@ -43,6 +43,15 @@ export class ApiClient {
         if (forwardedFor) headers.set("x-forwarded-for", forwardedFor);
         if (realIp) headers.set("x-real-ip", realIp);
 
+        // Also set x-client-ip to the real client IP, as reverse proxies (like Nginx on AWS)
+        // might overwrite x-forwarded-for and x-real-ip with the BFF server IP.
+        if (realIp) {
+          headers.set("x-client-ip", realIp);
+        } else if (forwardedFor) {
+          const clientIp = forwardedFor.split(",")[0]?.trim();
+          if (clientIp) headers.set("x-client-ip", clientIp);
+        }
+
         // Forward GPS/location headers if provided by the browser
         const lat = nextHeaders.get("x-client-latitude");
         const lon = nextHeaders.get("x-client-longitude");
