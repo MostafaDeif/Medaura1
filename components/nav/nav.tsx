@@ -258,7 +258,7 @@ const Navbar: FC = () => {
                 </button>
 
                 {notifOpen && (
-                  <div className="absolute ltr:right-[-120px] rtl:left-[-120px] sm:ltr:right-0 sm:rtl:left-0 top-[calc(100%+10px)] z-50 w-[300px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-[0_16px_48px_rgba(15,26,79,0.18)] sm:w-[340px]">
+                  <div className="fixed left-1/2 -translate-x-1/2 top-[70px] sm:absolute sm:translate-x-0 sm:ltr:right-0 sm:rtl:left-0 sm:top-[calc(100%+10px)] z-50 w-[90vw] max-w-[340px] overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-[0_16px_48px_rgba(15,26,79,0.18)]">
                     {/* Notif header */}
                     <div className="flex items-center justify-between border-b border-zinc-100 bg-[#f5f7ff] px-4 py-3">
                       <div className="flex items-center gap-2">
