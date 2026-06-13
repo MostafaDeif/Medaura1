@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import Navbar from "@/components/nav/nav";
 import Footer from "@/components/footer/footer";
 import { useLocale } from "@/lib/hooks";
+import ChatbotWidget from "@/components/ui/ChatbotWidget";
 
 type ClientLocation = {
   city?: string | null;
@@ -160,6 +161,7 @@ export default function AppChrome({ children }: { children: React.ReactNode }) {
       <Navbar />
       <div className="lg:px-12 xl:px-24">{children}</div>
       <Footer />
+      <ChatbotWidget />
     </>
   );
 }
