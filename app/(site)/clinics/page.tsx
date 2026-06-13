@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ClinicCard from "@/components/clinics/ClinicCard";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Search, X } from "lucide-react";
 import { t } from "@/i18n";
 
 type GeoLocation = {
@@ -85,15 +85,17 @@ function normalizeClinic(clinic: ApiClinic, index: number): ClinicCardData | nul
 export default function Page() {
   const [clinics, setClinics] = useState<ClinicCardData[]>([]);
   const [visibleCount, setVisibleCount] = useState(6);
-  const [locale, setLocale] = useState("en");
+  const [locale, setLocale] = useState(() =>
+    typeof window === "undefined" ? "en" : localStorage.getItem("locale") || "en"
+  );
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem("locale");
-    if (stored) setLocale(stored);
-
-    const handleLocaleChange = (e: any) => setLocale(e.detail);
+    const handleLocaleChange = (event: Event) => {
+      setLocale((event as CustomEvent<string>).detail);
+    };
     window.addEventListener("localeChange", handleLocaleChange);
     return () => window.removeEventListener("localeChange", handleLocaleChange);
   }, []);
@@ -152,6 +154,21 @@ export default function Page() {
     setVisibleCount((prev) => prev + 6);
   };
 
+  const updateSearchQuery = (value: string) => {
+    setSearchQuery(value);
+    setVisibleCount(6);
+  };
+
+  const filteredClinics = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return clinics;
+
+    return clinics.filter((clinic) => {
+      const searchableText = `${clinic.name} ${clinic.location}`.toLowerCase();
+      return searchableText.includes(query);
+    });
+  }, [clinics, searchQuery]);
+
   return (
     <div className="bg-white pt-24 pb-12">
       <section className="py-12">
@@ -165,6 +182,32 @@ export default function Page() {
               {t("clinics.subtitle", locale)}
             </p>
           </div>
+
+          {!loading && !error && clinics.length > 0 && (
+            <div className="mx-auto mb-10 max-w-xl">
+              <div className="flex items-center gap-3 rounded-2xl border border-[#dbe2f5] bg-white px-4 py-3 shadow-sm transition-all duration-200 focus-within:border-[#001A6E] focus-within:shadow-md">
+                <Search className="h-5 w-5 shrink-0 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(event) => updateSearchQuery(event.target.value)}
+                  placeholder="Search clinics by name or city"
+                  className="min-w-0 flex-1 bg-transparent text-sm font-medium text-gray-800 outline-none placeholder:text-gray-400"
+                  aria-label="Search clinics by name or city"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => updateSearchQuery("")}
+                    className="rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#001A6E]"
+                    aria-label="Clear clinic search"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Loading State */}
           {loading && (
@@ -184,13 +227,13 @@ export default function Page() {
           {!loading && !error && (
             <>
               <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-                {clinics.slice(0, visibleCount).map((clinic) => (
+                {filteredClinics.slice(0, visibleCount).map((clinic) => (
                   <ClinicCard key={clinic.clinic_id} clinic={clinic} />
                 ))}
               </div>
 
               {/* Load More */}
-              {visibleCount < clinics.length && (
+              {visibleCount < filteredClinics.length && (
                 <div className="flex justify-center mt-16">
                   <button
                     onClick={loadMore}
@@ -203,9 +246,13 @@ export default function Page() {
               )}
 
               {/* Empty State */}
-              {clinics.length === 0 && (
+              {filteredClinics.length === 0 && (
                 <div className="text-center py-12">
-                  <p className="text-gray-400 text-lg">No clinics found</p>
+                  <p className="text-gray-400 text-lg">
+                    {searchQuery.trim()
+                      ? "No clinics match your search"
+                      : "No clinics found"}
+                  </p>
                 </div>
               )}
             </>
