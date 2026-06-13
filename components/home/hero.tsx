@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { t } from "@/i18n";
 import { motion, Variants } from "framer-motion";
 import { useLocale } from "@/lib/hooks";
+import { TypeAnimation } from "react-type-animation";
 
 const API_URL = "/api/user/stats";
 
@@ -71,7 +72,12 @@ const descVariants: Variants = {
 
 const imageVariants: Variants = {
   hidden: { opacity: 0, x: 80, scale: 1.05 },
-  show: { opacity: 1, x: 0, scale: 1, transition: { duration: 0.9, ease: "easeOut" } },
+  show: {
+    opacity: 1,
+    x: 0,
+    scale: 1,
+    transition: { duration: 0.9, ease: "easeOut" },
+  },
 };
 
 export default function Hero() {
@@ -134,6 +140,19 @@ export default function Hero() {
             >
               {t("hero.trusted", locale)}
             </motion.p>
+
+            <motion.div
+              variants={descVariants}
+              className="max-w-xl min-h-[40px] text-base font-bold leading-7 text-[#0f1a4f] sm:text-lg"
+            >
+              <TypeAnimation
+                key={locale} // Re-mount when locale changes
+                sequence={[t("hero.aiDescription", locale), 1000]}
+                wrapper="span"
+                speed={50}
+                repeat={0}
+              />
+            </motion.div>
 
             <motion.h1
               variants={titleVariants}
@@ -217,7 +236,6 @@ export default function Hero() {
             </motion.div>
           ))}
         </motion.div>
-
       </div>
     </motion.section>
   );
