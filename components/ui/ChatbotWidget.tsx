@@ -23,6 +23,15 @@ export default function ChatbotWidget() {
 
   return (
     <>
+      {/* Background Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[9998] animate-in fade-in duration-300"
+          onClick={() => setIsOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Chat Window Card - Anchored to the bottom of the page */}
       {isOpen && (
         <div 
