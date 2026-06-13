@@ -185,12 +185,14 @@ export default function FinancialPage() {
   const [error, setError]                     = useState<string | null>(null);
   const [lastUpdatedTs, setLastUpdatedTs]     = useState<number | null>(null);
   const [tickCount, setTickCount]             = useState(0);
+  const [refreshCountdown, setRefreshCountdown] = useState<number | null>(null);
 
   const [filters, setFilters]       = useState<FiltersType>({ period: "month" });
   const [editRecord, setEditRecord] = useState<DoctorFinancialRecord | null>(null);
 
   const checkRef    = useRef<ReturnType<typeof setInterval> | null>(null);
   const tickRef     = useRef<ReturnType<typeof setInterval> | null>(null);
+  const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── activePeriod: key used for paid-status lookup (e.g. "2025-06") ────────
   const activePeriod = (() => {
@@ -305,6 +307,7 @@ export default function FinancialPage() {
     return () => {
       if (checkRef.current) clearInterval(checkRef.current);
       if (tickRef.current)  clearInterval(tickRef.current);
+      if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
     };
   }, [fetchSummary, fetchAllAppointments]);
 
@@ -312,6 +315,15 @@ export default function FinancialPage() {
   useEffect(() => {
     void fetchTransactions(filters);
   }, [filters, fetchTransactions]);
+
+  // Handle the 15-second countdown timer UI
+  useEffect(() => {
+    if (refreshCountdown === null || refreshCountdown <= 0) return;
+    const timer = setTimeout(() => {
+      setRefreshCountdown(prev => (prev !== null ? prev - 1 : null));
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [refreshCountdown]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -373,8 +385,17 @@ export default function FinancialPage() {
     });
 
     // ── Refresh both data sources ─────────────────────────────────────────────
-    void fetchAllAppointments(); // refresh unfiltered confirmation table
-    void fetchTransactions(filters); // refresh filtered doctor earnings table
+    if (refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current);
+    }
+    
+    setRefreshCountdown(15);
+    refreshTimeoutRef.current = setTimeout(() => {
+      setRefreshCountdown(null);
+      void fetchAllAppointments(); // refresh unfiltered confirmation table
+      void fetchTransactions(filters); // refresh filtered doctor earnings table
+      void fetchSummary(true); // update main revenue summaries as well
+    }, 15000);
   };
 
   /**
@@ -469,16 +490,17 @@ export default function FinancialPage() {
 
           {/* Schedule info pills */}
           <div className="hidden sm:flex items-center gap-2">
-            {lastUpdatedTs && (
-              <span className="flex items-center gap-1.5 text-xs text-(--text-secondary) bg-(--semi-card-bg) px-3 py-1.5 rounded-xl border border-(--card-border)">
-                <Clock size={11} />
-                آخر تحديث: {formatLastUpdated(lastUpdatedTs)}
+            {refreshCountdown !== null ? (
+              <span className="flex items-center gap-1.5 text-xs text-amber-500 bg-amber-500/10 px-3 py-1.5 rounded-xl border border-amber-500/20">
+                <RefreshCw size={11} className="animate-spin" />
+                تحديث البيانات خلال {refreshCountdown}ث
               </span>
-            )}
-            <span className="flex items-center gap-1.5 text-xs text-teal-500 bg-teal-500/8 px-3 py-1.5 rounded-xl border border-teal-500/20">
-              <Clock size={11} />
-              التحديث القادم: الساعة 9م · {formatNextRefresh()}
-            </span>
+            ) : lastUpdatedTs ? (
+              <span className="flex items-center gap-1.5 text-xs text-teal-500 bg-teal-500/8 px-3 py-1.5 rounded-xl border border-teal-500/20">
+                <Clock size={11} />
+                اخر تحديث {formatLastUpdated(lastUpdatedTs)}
+              </span>
+            ) : null}
           </div>
 
           <button

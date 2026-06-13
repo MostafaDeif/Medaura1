@@ -89,7 +89,20 @@ export function getApptPaymentStatus(
   bookingId: string | number,
   apptStore: AppointmentPaymentStore
 ): "paid" | "cancelled" | "pending" {
-  return apptStore[String(bookingId)] ?? "pending";
+  const record = apptStore[String(bookingId)];
+  if (!record) return "pending";
+  if (typeof record === "string") return record as "paid" | "cancelled";
+  return record.status;
+}
+
+export function getApptPaymentDate(
+  bookingId: string | number,
+  apptStore: AppointmentPaymentStore,
+  fallbackDate: string
+): string {
+  const record = apptStore[String(bookingId)];
+  if (!record || typeof record === "string") return fallbackDate;
+  return record.date;
 }
 
 // ── Staff map builder ─────────────────────────────────────────────────────────
@@ -156,14 +169,19 @@ export function computeSummary(
     const config = profitStore[String(docId)] ?? { doctorPercentage: DEFAULT_DOCTOR_PCT, paid: [] };
     const docPct    = config.doctorPercentage;
     const clinicPct = 100 - docPct;
+    
+    const paymentDate = getApptPaymentDate(b.id, apptStore, date);
 
-    // ── Revenue KPIs (paid + pending — both count toward revenue) ─────────────
-    if (date === today)              todayRevenue    += fee;
-    if (date.startsWith(monthStr))   monthlyRevenue  += fee;
-    if (date.startsWith(yearStr)) {
-      yearlyRevenue        += fee;
-      clinicProfit         += (fee * clinicPct) / 100;
-      doctorsTotalEarnings += (fee * docPct)    / 100;
+    // ── Revenue KPIs ─────────────
+    // All Revenue KPIs: Use paymentDate and ONLY include "paid"
+    if (paymentStatus === "paid") {
+      if (paymentDate === today)              todayRevenue    += fee;
+      if (paymentDate.startsWith(monthStr))   monthlyRevenue  += fee;
+      if (paymentDate.startsWith(yearStr)) {
+        yearlyRevenue        += fee;
+        clinicProfit         += (fee * clinicPct) / 100;
+        doctorsTotalEarnings += (fee * docPct)    / 100;
+      }
     }
 
     // ── Pending patient payments ───────────────────────────────────────────────
@@ -334,12 +352,12 @@ export function computeDailyRevenue(
 
   for (const b of bookings) {
     if (!isCompleted(b)) continue;
-    if (getApptPaymentStatus(b.id, apptStore) === "cancelled") continue;
+    if (getApptPaymentStatus(b.id, apptStore) !== "paid") continue;
     const docId = b.doctor_id ?? b.staff_id;
     if (!docId) continue;
     const fee  = staffMap.get(docId)?.consultation_price ?? 0;
-    const date = getBookingDate(b);
-    if (map.has(date)) map.set(date, (map.get(date) ?? 0) + fee);
+    const paymentDate = getApptPaymentDate(b.id, apptStore, getBookingDate(b));
+    if (map.has(paymentDate)) map.set(paymentDate, (map.get(paymentDate) ?? 0) + fee);
   }
 
   return Array.from(map.entries()).map(([date, revenue]) => ({ date, revenue }));
@@ -374,11 +392,12 @@ export function computeMonthlyRevenue(
 
   for (const b of bookings) {
     if (!isCompleted(b)) continue;
-    if (getApptPaymentStatus(b.id, apptStore) === "cancelled") continue;
+    if (getApptPaymentStatus(b.id, apptStore) !== "paid") continue;
     const docId = b.doctor_id ?? b.staff_id;
     if (!docId) continue;
     const fee   = staffMap.get(docId)?.consultation_price ?? 0;
-    const month = getBookingDate(b).slice(0, 7);
+    const paymentDate = getApptPaymentDate(b.id, apptStore, getBookingDate(b));
+    const month = paymentDate.slice(0, 7);
     const entry = monthMap.get(month);
     if (entry) entry.revenue += fee;
   }
