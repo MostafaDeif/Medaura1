@@ -154,7 +154,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
           <div className="border border-zinc-100 rounded-lg p-4 sm:p-6 shadow-sm">
             {/* REGISTER ACCOUNT TYPE SELECTOR */}
             {isRegisterPage && (
-              <div className="grid grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-3 mb-6">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-6">
                 {REGISTER_TYPES.map((type) => (
                   <Link
                     key={type.key}

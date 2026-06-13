@@ -157,7 +157,7 @@ export default function ClinicRegisterPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-1 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         <div className="relative">
           <label
             htmlFor="password"

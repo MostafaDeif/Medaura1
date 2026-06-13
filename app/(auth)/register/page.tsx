@@ -181,20 +181,26 @@ export default function PatientRegisterPage() {
           </p>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           <div className="relative">
-            <label className="block text-sm font-medium text-zinc-700 mb-1">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-zinc-700 mb-1"
+            >
               كلمة المرور
             </label>
 
             <div className="relative">
               <input
+                id="password"
+                name="password"
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="كلمة المرور"
+                aria-invalid={!!errors.password}
                 className={`w-full border rounded-md px-3 py-2 pr-12 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:scale-[1.01] ${
-                  errors.name ? "border-red-300" : "border-zinc-200"
+                  errors.password ? "border-red-300" : "border-zinc-200"
                 }`}
               />
 
@@ -215,18 +221,24 @@ export default function PatientRegisterPage() {
           </div>
 
           <div className="relative">
-            <label className="block text-sm font-medium text-zinc-700 mb-1">
+            <label
+              htmlFor="confirm"
+              className="block text-sm font-medium text-zinc-700 mb-1"
+            >
               تأكيد كلمة المرور
             </label>
 
             <div className="relative">
               <input
+                id="confirm"
+                name="confirm"
                 type={showConfirm ? "text" : "password"}
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
                 placeholder="تأكيد كلمة المرور"
+                aria-invalid={!!errors.confirm}
                 className={`w-full border rounded-md px-3 py-2 pr-12 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:scale-[1.01] ${
-                  errors.name ? "border-red-300" : "border-zinc-200"
+                  errors.confirm ? "border-red-300" : "border-zinc-200"
                 }`}
               />
 
