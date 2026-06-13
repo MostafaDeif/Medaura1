@@ -23,26 +23,17 @@ export default function Amount({
   style,
 }: AmountProps) {
   let formattedNumber = "";
-  let suffix = "";
 
-  if (compact && value >= 1_000_000) {
-    formattedNumber = (value / 1_000_000).toFixed(1).replace(/\.0$/, "");
-    suffix = "M";
-  } else if (compact && value >= 1_000) {
-    formattedNumber = (value / 1_000).toFixed(1).replace(/\.0$/, "");
-    suffix = "K";
-  } else {
-    // Standard format with commas for thousands
-    formattedNumber = new Intl.NumberFormat("en-US", {
-      style: "decimal",
-      maximumFractionDigits: 0,
-    }).format(value);
-  }
+  // Always use standard format with commas for thousands
+  formattedNumber = new Intl.NumberFormat("en-US", {
+    style: "decimal",
+    maximumFractionDigits: 0,
+  }).format(value);
 
   return (
     <div className={`inline-flex items-baseline gap-1 select-none ${className}`} style={style} dir="ltr">
       <span className="font-black tracking-tight leading-none">
-        {formattedNumber}{suffix}
+        {formattedNumber}
       </span>
       <span className={currencyClassName}>
         EGP

@@ -31,8 +31,6 @@ export function formatCurrency(amount: number): string {
 }
 
 export function formatCurrencyCompact(amount: number): string {
-  if (amount >= 1_000_000) return "\u200E" + (amount / 1_000_000).toFixed(1) + "M EGP";
-  if (amount >= 1_000)     return "\u200E" + (amount / 1_000).toFixed(1)     + "K EGP";
   return formatCurrency(amount);
 }
 
