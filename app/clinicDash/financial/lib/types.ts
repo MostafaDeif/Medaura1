@@ -96,10 +96,10 @@ export type ProfitSharingStore = Record<string, ProfitSharingConfig>;
 
 /**
  * Per-appointment payment tracking store.
- * Key = bookingId, Value = "paid" | "cancelled"
- * Absence of a key means the booking is "pending".
+ * Key = bookingId, Value = string or object with date
  */
-export type AppointmentPaymentStore = Record<string, "paid" | "cancelled">;
+export type AppointmentPaymentRecord = "paid" | "cancelled" | { status: "paid" | "cancelled"; date: string };
+export type AppointmentPaymentStore = Record<string, AppointmentPaymentRecord>;
 
 /** Raw booking from the backend */
 export interface RawBooking {

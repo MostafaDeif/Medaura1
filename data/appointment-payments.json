@@ -1,12 +1,22 @@
 {
   "6a2c340ac5f9d5e9d141b9ce": "paid",
   "6a2c903f0c718752c38566fe": "cancelled",
-  "6a2c53082c561af8334a70b4": "paid",
   "6a2c37f7ae3d04b5a6e960d9": "paid",
   "6a2c377cc5f9d5e9d141b9fb": "paid",
   "6a2c3edb183fd074f8c8a91d": "cancelled",
-  "6a2c8d7749fbf5bde93f5ed2": "paid",
+  "6a2c8d7749fbf5bde93f5ed2": {
+    "status": "cancelled",
+    "date": "2026-06-13"
+  },
   "6a2c92810c718752c385671f": "paid",
   "6a2c92f849fbf5bde93f5efe": "paid",
-  "6a2cc075cde7df100fd93ceb": "paid"
+  "6a2c53082c561af8334a70b4": "paid",
+  "6a2cc075cde7df100fd93ceb": {
+    "status": "paid",
+    "date": "2026-06-13"
+  },
+  "6a2d1b7592d4f3ac2ed8d652": {
+    "status": "paid",
+    "date": "2026-06-13"
+  }
 }

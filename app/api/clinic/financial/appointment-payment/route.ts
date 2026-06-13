@@ -71,7 +71,10 @@ export async function PATCH(request: NextRequest) {
     // "pending" means "reset" → remove the key so absence = pending
     delete store[key];
   } else {
-    store[key] = body.status;
+    store[key] = {
+      status: body.status,
+      date: new Date().toISOString().slice(0, 10),
+    };
   }
 
   writeStore(store);

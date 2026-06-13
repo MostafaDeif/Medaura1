@@ -72,7 +72,10 @@ export async function PATCH(request: NextRequest) {
     // Revert to default — remove explicit record so auto-logic applies
     delete store[key];
   } else {
-    store[key] = body.status as "paid" | "cancelled";
+    store[key] = {
+      status: body.status as "paid" | "cancelled",
+      date: new Date().toISOString().slice(0, 10),
+    };
   }
 
   writeStore(store);
