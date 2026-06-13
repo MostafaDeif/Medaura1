@@ -1,7 +1,9 @@
 "use client";
 
-import { TrendingUp, TrendingDown, ArrowUpRight, AlertCircle } from "lucide-react";
+import { TrendingUp, TrendingDown, ArrowUpRight, AlertCircle, Building2, UserRound, Hourglass, Check } from "lucide-react";
+import CountUp from "react-countup";
 import { formatCurrencyCompact, formatCurrency } from "../lib/calculations";
+import Amount from "./Amount";
 import type { FinancialSummary } from "../lib/types";
 
 interface Props {
@@ -157,12 +159,17 @@ export default function FinancialOverviewCards({ summary, loading }: Props) {
               <p className="text-white/55 text-[11px] font-semibold tracking-widest uppercase mb-2">
                 إجمالي الإيرادات
               </p>
-              <p className="text-4xl lg:text-5xl font-black text-white leading-none tracking-tight">
-                {formatCurrencyCompact(summary.yearlyRevenue)}
-              </p>
-              <p className="text-white/40 text-xs mt-1">
-                {formatCurrency(summary.yearlyRevenue)}
-              </p>
+              <Amount 
+                value={summary.yearlyRevenue} 
+                compact 
+                className="text-4xl lg:text-5xl font-black text-white" 
+                currencyClassName="text-2xl opacity-70 ml-1" 
+              />
+              <Amount 
+                value={summary.yearlyRevenue} 
+                className="text-white/40 text-xs mt-1 block" 
+                currencyClassName="text-[10px] ml-1" 
+              />
             </div>
 
             <div className="flex flex-col gap-3">
@@ -175,11 +182,11 @@ export default function FinancialOverviewCards({ summary, loading }: Props) {
               <div className="grid grid-cols-2 gap-2">
                 <div className="rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 px-3 py-2.5">
                   <p className="text-white/50 text-[10px] mb-0.5">هذا الشهر</p>
-                  <p className="text-white font-bold text-sm leading-none">{formatCurrencyCompact(summary.monthlyRevenue)}</p>
+                  <Amount value={summary.monthlyRevenue} compact className="text-white font-bold text-sm" currencyClassName="text-[10px] ml-1 opacity-70" />
                 </div>
                 <div className="rounded-2xl bg-white/10 backdrop-blur-sm border border-white/10 px-3 py-2.5">
                   <p className="text-white/50 text-[10px] mb-0.5">اليوم</p>
-                  <p className="text-white font-bold text-sm leading-none">{formatCurrencyCompact(summary.todayRevenue)}</p>
+                  <Amount value={summary.todayRevenue} compact className="text-white font-bold text-sm" currencyClassName="text-[10px] ml-1 opacity-70" />
                 </div>
               </div>
             </div>
@@ -205,9 +212,12 @@ export default function FinancialOverviewCards({ summary, loading }: Props) {
               <p className="text-white/55 text-[11px] font-semibold tracking-widest uppercase mb-4">
                 إيرادات الشهر
               </p>
-              <p className="text-3xl lg:text-4xl font-black text-white leading-none">
-                {formatCurrencyCompact(summary.monthlyRevenue)}
-              </p>
+              <Amount 
+                value={summary.monthlyRevenue} 
+                compact 
+                className="text-3xl lg:text-4xl font-black text-white" 
+                currencyClassName="text-xl opacity-70 ml-1" 
+              />
               <div className="flex items-center gap-1.5 mt-2">
                 <TrendingUp size={12} className="text-emerald-300" />
                 <span className="text-emerald-300 text-[11px] font-semibold">{monthlyPct}% من السنوي</span>
@@ -257,12 +267,17 @@ export default function FinancialOverviewCards({ summary, loading }: Props) {
             </div>
             {/* Value */}
             <div>
-              <p className="text-3xl font-black text-white leading-none">
-                {formatCurrencyCompact(summary.todayRevenue)}
-              </p>
-              <p className="text-white/40 text-[10px] mt-1">
-                {formatCurrency(summary.todayRevenue)}
-              </p>
+              <Amount 
+                value={summary.todayRevenue} 
+                compact 
+                className="text-3xl font-black text-white" 
+                currencyClassName="text-xl opacity-70 ml-1" 
+              />
+              <Amount 
+                value={summary.todayRevenue} 
+                className="text-white/40 text-[10px] mt-1 block" 
+                currencyClassName="text-[8px] ml-1" 
+              />
               <div className="flex items-center gap-1 mt-2">
                 {todayPct >= 5
                   ? <TrendingUp size={11} className="text-violet-300" />
@@ -288,131 +303,89 @@ export default function FinancialOverviewCards({ summary, loading }: Props) {
       {/* ══════════════════════════════════════════════════
           ROW 2  — 3 equal cards: Clinic | Doctors | Pending
       ══════════════════════════════════════════════════ */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
         {/* ── CARD 4: ربح العيادة ── */}
-        <div
-          className="relative rounded-3xl overflow-hidden group cursor-default border border-(--card-border)"
-          style={{
-            background: "var(--card-bg)",
-            boxShadow: "var(--shadow-soft)",
-            minHeight: 148,
-            animation: "fadeUp 0.5s ease both",
-            animationDelay: "180ms",
-          }}
-        >
-          {/* Right accent strip */}
-          <div className="absolute inset-y-0 right-0 w-1 rounded-r-3xl bg-gradient-to-b from-teal-400 to-teal-600" />
-          <div className="relative z-10 flex flex-col justify-between h-full p-5 pr-6" style={{ minHeight: 148 }}>
-            <div className="flex items-start justify-between">
-              <p className="text-xs font-semibold text-(--text-secondary)">ربح العيادة</p>
-              <div className="w-9 h-9 rounded-2xl flex items-center justify-center text-xl" style={{ background: "rgba(20,184,166,0.1)" }}>
-                🏥
-              </div>
-            </div>
-            <div className="space-y-2">
-              <p className="text-2xl font-black text-teal-500 leading-none">
-                {formatCurrencyCompact(summary.clinicProfit)}
-              </p>
-              <ProgressBar pct={clinicPct} color="#14b8a6" />
-              <p className="text-[10px] text-(--text-secondary)">{clinicPct}% من الإجمالي</p>
+        <div className="relative bg-white rounded-[20px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-gray-100 p-6 flex flex-col justify-between overflow-hidden group hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] transition-all duration-300 min-h-[160px]">
+          {/* Right colored strip */}
+          <div className="absolute top-4 bottom-4 right-0 w-1.5 bg-[#0bc4b3] rounded-l-full" />
+          
+          <div className="flex justify-between items-start">
+            <p className="text-gray-500 font-semibold text-sm">ربح العيادة</p>
+            <div className="w-10 h-10 rounded-full bg-teal-50 border border-teal-100 flex items-center justify-center">
+              <Building2 size={18} className="text-[#0bc4b3]" />
             </div>
           </div>
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-3xl" style={{ background: "var(--hover-bg)" }} />
+
+          <div className="mt-4 flex flex-col gap-3">
+            <div className="text-3xl font-black text-[#0bc4b3] self-end flex items-baseline gap-1" dir="ltr">
+              <CountUp end={summary.clinicProfit} duration={2} separator="," /> <span className="text-xl">EGP</span>
+            </div>
+            
+            <div className="flex items-center gap-3 w-full">
+              <p className="text-[11px] text-gray-400 font-medium whitespace-nowrap">{clinicPct}% من الإجمالي</p>
+              <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden flex">
+                <div className="h-full bg-[#0bc4b3] rounded-full transition-all duration-1000" style={{ width: `${clinicPct}%` }} />
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* ── CARD 5: أرباح الأطباء ── */}
-        <div
-          className="relative rounded-3xl overflow-hidden group cursor-default border border-(--card-border)"
-          style={{
-            background: "var(--card-bg)",
-            boxShadow: "var(--shadow-soft)",
-            minHeight: 148,
-            animation: "fadeUp 0.5s ease both",
-            animationDelay: "220ms",
-          }}
-        >
-          <div className="absolute inset-y-0 right-0 w-1 rounded-r-3xl bg-gradient-to-b from-amber-400 to-amber-600" />
-          <div className="relative z-10 flex flex-col justify-between h-full p-5 pr-6" style={{ minHeight: 148 }}>
-            <div className="flex items-start justify-between">
-              <p className="text-xs font-semibold text-(--text-secondary)">أرباح الأطباء</p>
-              <div className="w-9 h-9 rounded-2xl flex items-center justify-center text-xl" style={{ background: "rgba(245,158,11,0.1)" }}>
-                👨‍⚕️
-              </div>
-            </div>
-            <div className="space-y-2">
-              <p className="text-2xl font-black text-amber-500 leading-none">
-                {formatCurrencyCompact(summary.doctorsTotalEarnings)}
-              </p>
-              <ProgressBar pct={doctorPct} color="#f59e0b" />
-              <p className="text-[10px] text-(--text-secondary)">{doctorPct}% من الإجمالي</p>
+        <div className="relative bg-white rounded-[20px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-gray-100 p-6 flex flex-col justify-between overflow-hidden group hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] transition-all duration-300 min-h-[160px]">
+          <div className="absolute top-4 bottom-4 right-0 w-1.5 bg-[#f59e0b] rounded-l-full" />
+          
+          <div className="flex justify-between items-start">
+            <p className="text-gray-500 font-semibold text-sm">أرباح الأطباء</p>
+            <div className="w-10 h-10 rounded-full bg-orange-50 border border-orange-100 flex items-center justify-center">
+              <UserRound size={18} className="text-[#f59e0b]" />
             </div>
           </div>
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-3xl" style={{ background: "var(--hover-bg)" }} />
+
+          <div className="mt-4 flex flex-col gap-3">
+            <div className="text-3xl font-black text-[#f59e0b] self-end flex items-baseline gap-1" dir="ltr">
+              <CountUp end={summary.doctorsTotalEarnings} duration={2} separator="," /> <span className="text-xl">EGP</span>
+            </div>
+            
+            <div className="flex items-center gap-3 w-full">
+              <p className="text-[11px] text-gray-400 font-medium whitespace-nowrap">{doctorPct}% من الإجمالي</p>
+              <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden flex">
+                <div className="h-full bg-[#f59e0b] rounded-full transition-all duration-1000" style={{ width: `${doctorPct}%` }} />
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* ── CARD 6: مدفوعات معلقة ── */}
-        <div
-          className="relative rounded-3xl overflow-hidden group cursor-default"
-          style={{
-            background: hasPending
-              ? "linear-gradient(135deg, #3f0015 0%, #7f1d1d 55%, #991b1b 100%)"
-              : "var(--card-bg)",
-            boxShadow: hasPending ? "0 10px 36px rgba(239,68,68,0.28)" : "var(--shadow-soft)",
-            border: hasPending ? "none" : "1px solid var(--card-border)",
-            minHeight: 148,
-            animation: "fadeUp 0.5s ease both",
-            animationDelay: "260ms",
-          }}
-        >
-          {hasPending && <GlowOrb color="#fca5a5" bottom={-20} left={-10} />}
-
-          {/* Alert pill */}
-          {hasPending && (
-            <div className="absolute top-3.5 left-4 z-10 flex items-center gap-1.5 bg-white/10 rounded-full px-2.5 py-0.5">
-              <AlertCircle size={10} className="text-rose-200 animate-pulse" />
-              <span className="text-[9px] text-rose-200 font-bold">يحتاج دفع</span>
-            </div>
-          )}
-
-          <div className="relative z-10 flex flex-col justify-between h-full p-5" style={{ minHeight: 148 }}>
-            <div className="flex items-start justify-between">
-              <p
-                className="text-xs font-semibold"
-                style={{ color: hasPending ? "rgba(255,255,255,0.55)" : "var(--text-secondary)" }}
-              >
-                مدفوعات معلقة
-              </p>
-              <div
-                className="w-9 h-9 rounded-2xl flex items-center justify-center text-xl"
-                style={{ background: hasPending ? "rgba(255,255,255,0.1)" : "rgba(239,68,68,0.08)" }}
-              >
-                ⏳
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <p
-                className="text-2xl font-black leading-none"
-                style={{ color: hasPending ? "#fff" : "#ef4444" }}
-              >
-                {formatCurrencyCompact(summary.pendingPayments)}
-              </p>
-              <p
-                className="text-[10px] leading-snug"
-                style={{ color: hasPending ? "rgba(255,255,255,0.45)" : "var(--text-secondary)" }}
-              >
-                {hasPending
-                  ? "يتطلب إجراء — راجع جدول الأطباء"
-                  : "✓ لا توجد مدفوعات معلقة"}
-              </p>
+        <div className="relative bg-white rounded-[20px] shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-gray-100 p-6 flex flex-col justify-between overflow-hidden group hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] transition-all duration-300 min-h-[160px]">
+          {/* No side strip for this one as per the image, or add a red one if desired. Image shows NO strip. */}
+          
+          <div className="flex justify-between items-start">
+            <p className="text-gray-500 font-semibold text-sm">مدفوعات معلقة</p>
+            <div className="w-10 h-10 rounded-full bg-red-50 border border-red-100 flex items-center justify-center">
+              <Hourglass size={18} className="text-[#ef4444]" />
             </div>
           </div>
-          {!hasPending && (
-            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-3xl" style={{ background: "var(--hover-bg)" }} />
-          )}
-          {hasPending && (
-            <div className="absolute inset-0 bg-white/0 group-hover:bg-white/[0.04] transition-colors duration-300 rounded-3xl" />
-          )}
+
+          <div className="mt-4 flex flex-col gap-3">
+            <div className="text-3xl font-black text-[#ef4444] self-end flex items-baseline gap-1" dir="ltr">
+              <CountUp end={summary.pendingPayments} duration={2} separator="," /> <span className="text-xl">EGP</span>
+            </div>
+            
+            <div className="flex items-center justify-end gap-1.5 w-full mt-1">
+              {hasPending ? (
+                <>
+                  <p className="text-[11px] text-rose-500 font-medium">يتطلب إجراء الدفع</p>
+                  <AlertCircle size={12} className="text-rose-500" />
+                </>
+              ) : (
+                <>
+                  <p className="text-[11px] text-gray-400 font-medium">لا توجد مدفوعات معلقة</p>
+                  <Check size={12} className="text-gray-400" />
+                </>
+              )}
+            </div>
+          </div>
         </div>
 
       </div>

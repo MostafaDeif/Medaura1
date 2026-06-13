@@ -17,20 +17,22 @@ import type {
 export const CURRENCY = "EGP";
 export const DEFAULT_DOCTOR_PCT = 70;
 
-/** Format number as Arabic currency string */
+/** Format number as English digits currency string */
 export function formatCurrency(amount: number): string {
   return (
-    new Intl.NumberFormat("ar-EG", {
+    "\u200E" +
+    new Intl.NumberFormat("en-US", {
       style: "decimal",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(amount) + " ج.م"
+    }).format(amount) +
+    " EGP"
   );
 }
 
 export function formatCurrencyCompact(amount: number): string {
-  if (amount >= 1_000_000) return (amount / 1_000_000).toFixed(1) + "م ج.م";
-  if (amount >= 1_000)     return (amount / 1_000).toFixed(1)     + "ك ج.م";
+  if (amount >= 1_000_000) return "\u200E" + (amount / 1_000_000).toFixed(1) + "M EGP";
+  if (amount >= 1_000)     return "\u200E" + (amount / 1_000).toFixed(1)     + "K EGP";
   return formatCurrency(amount);
 }
 
