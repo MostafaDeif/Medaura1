@@ -38,6 +38,28 @@ function Skeleton() {
   );
 }
 
+function checkIsPast(bookingDate: string, bookingFrom: string) {
+  if (!bookingDate || bookingDate === "—") return false;
+  const now = new Date();
+  
+  let dtStr = `${bookingDate}T23:59:59`; // default end of day
+  
+  if (bookingFrom && bookingFrom !== "—") {
+    // extract HH:MM if possible
+    const match = bookingFrom.match(/(\d{1,2}):(\d{2})/);
+    if (match) {
+      let h = parseInt(match[1], 10);
+      const m = parseInt(match[2], 10);
+      if (bookingFrom.toLowerCase().includes("pm") && h < 12) h += 12;
+      if (bookingFrom.toLowerCase().includes("am") && h === 12) h = 0;
+      dtStr = `${bookingDate}T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`;
+    }
+  }
+  
+  const d = new Date(dtStr);
+  return !isNaN(d.getTime()) && now > d;
+}
+
 export default function PendingAppointmentsTable({ records, loading, onMarkPayment }: Props) {
   if (loading) return <Skeleton />;
 
@@ -105,7 +127,7 @@ export default function PendingAppointmentsTable({ records, loading, onMarkPayme
                     </button>
                   </>
                 )}
-                {(r.paymentStatus === "paid" || r.paymentStatus === "cancelled") && (
+                {(r.paymentStatus === "paid" || r.paymentStatus === "cancelled") && !checkIsPast(r.bookingDate, r.bookingFrom) && (
                   <button
                     onClick={() => onMarkPayment(r.bookingId, "pending")}
                     className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-(--text-secondary) bg-(--semi-card-bg) hover:bg-(--hover-bg) border border-(--card-border) transition-colors"
@@ -207,7 +229,7 @@ export default function PendingAppointmentsTable({ records, loading, onMarkPayme
                         </button>
                       </>
                     )}
-                    {(r.paymentStatus === "paid" || r.paymentStatus === "cancelled") && (
+                    {(r.paymentStatus === "paid" || r.paymentStatus === "cancelled") && !checkIsPast(r.bookingDate, r.bookingFrom) && (
                       /* Reset to pending */
                       <button
                         onClick={() => onMarkPayment(r.bookingId, "pending")}

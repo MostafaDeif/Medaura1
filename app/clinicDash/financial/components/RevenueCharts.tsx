@@ -14,6 +14,7 @@ import {
   Pie,
   Cell,
   Legend,
+  LabelList,
 } from "recharts";
 import type { DailyRevenue, MonthlyRevenue, DoctorFinancialRecord } from "../lib/types";
 import { formatCurrencyCompact, formatCurrency } from "../lib/calculations";
@@ -300,10 +301,7 @@ function TopDoctorsChart({
             <YAxis
               type="category"
               dataKey="name"
-              tick={{ fontSize: 11, fill: "var(--text-secondary, #94a3b8)" }}
-              tickLine={false}
-              axisLine={false}
-              width={80}
+              hide
             />
             <Tooltip content={<CurrencyTooltip />} />
             <Bar
@@ -311,7 +309,9 @@ function TopDoctorsChart({
               fill="url(#amberGrad)"
               radius={[0, 6, 6, 0]}
               maxBarSize={28}
-            />
+            >
+              <LabelList dataKey="name" position="center" fill="#1a2340" fontSize={12} fontWeight="bold" />
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       )}

@@ -3,12 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { TrendingUp, RefreshCw, Clock } from "lucide-react";
 import FinancialOverviewCards from "./components/FinancialOverviewCards";
-import DoctorEarningsTable from "./components/DoctorEarningsTable";
-import ProfitSharingModal from "./components/ProfitSharingModal";
 import RevenueCharts from "./components/RevenueCharts";
-import FinancialFilters from "./components/FinancialFilters";
 import ExportButtons from "./components/ExportButtons";
-import PendingAppointmentsTable from "./components/PendingAppointmentsTable";
 import type {
   FinancialSummary,
   DailyRevenue,
@@ -188,7 +184,6 @@ export default function FinancialPage() {
   const [refreshCountdown, setRefreshCountdown] = useState<number | null>(null);
 
   const [filters, setFilters]       = useState<FiltersType>({ period: "month" });
-  const [editRecord, setEditRecord] = useState<DoctorFinancialRecord | null>(null);
 
   const checkRef    = useRef<ReturnType<typeof setInterval> | null>(null);
   const tickRef     = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -327,89 +322,7 @@ export default function FinancialPage() {
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
-  /**
-   * Change a doctor's profit-sharing percentage.
-   * Affects how profit is split → force-refresh summary to recompute
-   * clinicProfit & doctorsTotalEarnings from scratch.
-   */
-  const handleSavePercentage = async (doctorId: string | number, percentage: number) => {
-    await fetch("/api/clinic/financial/profit-sharing", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ doctor_id: doctorId, doctorPercentage: percentage }),
-    });
-    // Percentage change affects profit split → force-refresh summary
-    void fetchSummary(true);
-    void fetchTransactions(filters);
-  };
 
-  /**
-   * Per-appointment patient payment confirmation.
-   * "paid" or "cancelled" → removes the fee from pendingPayments INSTANTLY.
-   * "pending" (reset) → adds the fee back to pendingPayments INSTANTLY.
-   * Revenue KPIs stay on the 9 PM schedule.
-   */
-  const handleAppointmentPayment = async (
-    bookingId: string | number,
-    status: "paid" | "cancelled" | "pending"
-  ) => {
-    // Look up from UNFILTERED allApptData so any period's appointment can be confirmed
-    const appt       = allApptData.find((r) => String(r.bookingId) === String(bookingId));
-    const fee        = appt?.consultationFee ?? 0;
-    const prevStatus = appt?.paymentStatus   ?? "pending";
-
-    // ── Compute delta ─────────────────────────────────────────────────────────
-    let delta = 0;
-    if (prevStatus === "pending" && status !== "pending") delta = -fee;
-    if (prevStatus !== "pending" && status === "pending") delta = +fee;
-
-    // ── Optimistic update + sync localStorage cache ───────────────────────────
-    if (fee > 0 && delta !== 0) {
-      setSummaryData((prev) => {
-        if (!prev) return prev;
-        const newPending = Math.max(0, prev.summary.pendingPayments + delta);
-        const updated = {
-          ...prev,
-          summary: { ...prev.summary, pendingPayments: newPending },
-        };
-        writeCachedSummary(updated); // ★ keep cache in sync so reload shows correct value
-        return updated;
-      });
-    }
-
-    // ── Persist to server ─────────────────────────────────────────────────────
-    await fetch("/api/clinic/financial/appointment-payment", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ booking_id: bookingId, status }),
-    });
-
-    // ── Refresh both data sources ─────────────────────────────────────────────
-    if (refreshTimeoutRef.current) {
-      clearTimeout(refreshTimeoutRef.current);
-    }
-    
-    setRefreshCountdown(15);
-    refreshTimeoutRef.current = setTimeout(() => {
-      setRefreshCountdown(null);
-      void fetchAllAppointments(); // refresh unfiltered confirmation table
-      void fetchTransactions(filters); // refresh filtered doctor earnings table
-      void fetchSummary(true); // update main revenue summaries as well
-    }, 15000);
-  };
-
-  /**
-   * Doctor monthly salary payment (separate concept from patient payment).
-   * Only updates the salary status badge in the doctor earnings table.
-   */
-  const handleMarkPaid = async (doctorId: string | number, p: string, paid: boolean) => {
-    await fetch("/api/clinic/financial/mark-paid", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ doctor_id: doctorId, period: p, paid }),
-    });
-    void fetchTransactions(filters);
-  };
 
   const handleReset = () => setFilters({ period: "month" });
 
@@ -538,77 +451,6 @@ export default function FinancialPage() {
         loading={summaryLoading}
       />
 
-      {/* ── Filters ── */}
-      <FinancialFilters
-        specialists={specialists}
-        doctorOptions={doctorOptions}
-        filters={filters}
-        onFiltersChange={setFilters}
-        onReset={handleReset}
-      />
-
-      {/* ── Pending Patient Payments ── */}
-      <div className="rounded-2xl border border-(--card-border) bg-(--card-bg) p-5 shadow-[var(--shadow-soft)]">
-        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-          <div>
-            <h2 className="text-sm font-bold text-(--text-primary)">تأكيد مدفوعات المرضى</h2>
-            <p className="text-xs text-(--text-secondary) mt-0.5">
-              يرجى تأكيد دفع كل موعد — المبالغ غير المؤكدة تُضاف لـ "المدفوعات المعلقة"
-            </p>
-          </div>
-          <div className="flex items-center gap-2 text-xs">
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-              في الانتظار
-            </span>
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              مدفوع
-            </span>
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-500">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-              ملغي
-            </span>
-          </div>
-        </div>
-
-        <PendingAppointmentsTable
-          records={allApptData}
-          loading={allApptLoading}
-          onMarkPayment={handleAppointmentPayment}
-        />
-      </div>
-
-      {/* ── Doctor Earnings Table (salary payment tracking) ── */}
-      <div className="rounded-2xl border border-(--card-border) bg-(--card-bg) p-5 shadow-[var(--shadow-soft)]">
-        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-          <div>
-            <h2 className="text-sm font-bold text-(--text-primary)">توزيع أرباح الأطباء</h2>
-            <p className="text-xs text-(--text-secondary) mt-0.5">
-              {txData?.doctorRecords.length ?? 0} طبيب — حصص الأرباح وحالة صرف الرواتب
-            </p>
-          </div>
-          <span className="text-xs text-(--text-secondary) bg-(--semi-card-bg) px-3 py-1 rounded-full border border-(--card-border)">
-            الفترة: {activePeriod}
-          </span>
-        </div>
-
-        <DoctorEarningsTable
-          records={txData?.appointmentRecords ?? []}
-          doctorRecords={txData?.doctorRecords ?? []}
-          loading={txLoading}
-          period={activePeriod}
-          onEditPercentage={setEditRecord}
-          onMarkPaid={handleAppointmentPayment}
-        />
-      </div>
-
-      {/* ── Profit Sharing Modal ── */}
-      <ProfitSharingModal
-        record={editRecord}
-        onClose={() => setEditRecord(null)}
-        onSave={handleSavePercentage}
-      />
     </div>
   );
 }

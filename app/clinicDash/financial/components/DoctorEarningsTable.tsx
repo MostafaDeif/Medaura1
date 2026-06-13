@@ -14,6 +14,7 @@ interface Props {
   doctorRecords: DoctorFinancialRecord[];
   loading: boolean;
   period: string;
+  hideDoctorColumn?: boolean;
   onEditPercentage: (record: DoctorFinancialRecord) => void;
   onMarkPaid: (bookingId: string | number, status: "paid" | "cancelled") => Promise<void>;
 }
@@ -61,6 +62,7 @@ export default function DoctorEarningsTable({
   doctorRecords,
   loading,
   period,
+  hideDoctorColumn,
   onEditPercentage,
   onMarkPaid,
 }: Props) {
@@ -113,17 +115,13 @@ export default function DoctorEarningsTable({
   };
 
   // ── Column definitions ─────────────────────────────────────────────────────
-  const cols: { label: string; key?: SortKey; align?: string }[] = [
-    { label: "المريض",          key: "patientName"       },
-    { label: "الطبيب",          key: "doctorName"        },
-    { label: "التاريخ",         key: "bookingDate",       align: "text-center" },
-    { label: "سعر الاستشارة",  key: "consultationFee",   align: "text-center" },
-    { label: "% الطبيب",        align: "text-center"     },
-    { label: "% العيادة",       align: "text-center"     },
-    { label: "حصة الطبيب",     align: "text-center"     },
-    { label: "حصة العيادة",    align: "text-center"     },
-    { label: "الحالة",          key: "paymentStatus",     align: "text-center" },
-    { label: "إجراء",           align: "text-center"     },
+  const cols = [
+    { label: "المريض والتفاصيل", key: "patientName" as SortKey,      align: "text-right" },
+    ...(hideDoctorColumn ? [] : [{ label: "الطبيب المعالج",  key: "doctorName" as SortKey,       align: "text-right" }]),
+    { label: "حصة الطبيب",      align: "text-center" },
+    { label: "حصة العيادة",     align: "text-center" },
+    { label: "حالة الدفع",       key: "paymentStatus" as SortKey,    align: "text-center" },
+    { label: "إجراءات",          align: "text-center" },
   ];
 
   // ── Derived summary stats (paid only) ─────────────────────────────────────
@@ -193,7 +191,7 @@ export default function DoctorEarningsTable({
               <div className="flex items-start justify-between">
                 <div>
                   <p className="font-semibold text-(--text-primary)">{rec.patientName}</p>
-                  <p className="text-xs text-(--text-secondary) mt-0.5">{rec.doctorName} • {rec.specialist}</p>
+                  {!hideDoctorColumn && <p className="text-xs text-(--text-secondary) mt-0.5">{rec.doctorName} • {rec.specialist}</p>}
                 </div>
                 <span className={badge.wrapper}>
                   <Icon size={11} />
@@ -224,24 +222,11 @@ export default function DoctorEarningsTable({
                 </div>
               </div>
               {!isCancelled && (
-                <div className="pt-3 border-t border-(--card-border)">
-                  <button
-                    onClick={() => handleToggle(rec)}
-                    disabled={isProcessing}
-                    className={`w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all disabled:opacity-50 ${
-                      isPaid
-                        ? "bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400 hover:bg-rose-200"
-                        : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 hover:bg-emerald-200"
-                    }`}
-                  >
-                    {isProcessing ? (
-                      <span className="w-3 h-3 rounded-full border-2 border-current/30 border-t-current animate-spin inline-block" />
-                    ) : isPaid ? (
-                      "إلغاء الدفع"
-                    ) : (
-                      "تحديد كمدفوع"
-                    )}
-                  </button>
+                <div className="pt-3 border-t border-(--card-border) flex justify-end">
+                   <button onClick={() => handleEditDoctor(rec)} className="flex items-center gap-2 text-xs font-medium text-teal-500 bg-teal-500/10 px-4 py-2 rounded-xl hover:bg-teal-500 hover:text-white transition-all">
+                     <Edit3 size={14} />
+                     تعديل نسبة الطبيب
+                   </button>
                 </div>
               )}
             </div>
@@ -296,156 +281,115 @@ export default function DoctorEarningsTable({
                     animationDelay: `${idx * 30}ms`,
                   }}
                 >
-                  {/* ── Patient ── */}
-                  <td className="px-4 py-3.5 whitespace-nowrap">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-                        <User size={13} className="text-blue-600 dark:text-blue-400" />
+                  {/* ── Patient & Details ── */}
+                  <td className="px-4 py-4 whitespace-nowrap">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
+                        <User size={18} className="text-blue-500" />
                       </div>
-                      <span
-                        className={`font-medium text-sm ${
-                          isCancelled
-                            ? "line-through text-(--text-secondary)"
-                            : "text-(--text-primary)"
-                        }`}
-                      >
-                        {rec.patientName}
-                      </span>
+                      <div className="flex flex-col">
+                        <span className={`font-bold text-sm ${isCancelled ? "line-through text-(--text-secondary)" : "text-(--text-primary)"}`}>
+                          {rec.patientName}
+                        </span>
+                        <div className="flex items-center gap-2 text-xs text-(--text-secondary) mt-1">
+                          <span className="flex items-center gap-1">
+                            <Clock size={10} />
+                            {rec.bookingDate} {rec.bookingFrom !== "—" ? `• ${rec.bookingFrom}` : ""}
+                          </span>
+                          <span className="opacity-50">|</span>
+                          <span className={`font-semibold ${isPaid ? "text-emerald-500" : "text-(--text-secondary)"}`}>
+                            {formatCurrency(rec.consultationFee)}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </td>
 
                   {/* ── Doctor ── */}
-                  <td className="px-4 py-3.5 whitespace-nowrap">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-lg bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center shrink-0">
-                        <Stethoscope size={13} className="text-teal-600 dark:text-teal-400" />
+                  {!hideDoctorColumn && (
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center shrink-0">
+                          <Stethoscope size={18} className="text-teal-500" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-(--text-primary) text-sm">
+                            {rec.doctorName}
+                          </span>
+                          <span className="text-xs text-(--text-secondary) mt-1">
+                            {rec.specialist}
+                          </span>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-semibold text-(--text-primary) text-sm leading-tight">
-                          {rec.doctorName}
-                        </p>
-                        <p className="text-[11px] text-(--text-secondary)">
-                          {rec.specialist}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* ── Date / Time ── */}
-                  <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                    <p className="text-xs font-medium text-(--text-primary)">
-                      {rec.bookingDate}
-                    </p>
-                    {rec.bookingFrom !== "—" && (
-                      <p className="text-[11px] text-(--text-secondary)">{rec.bookingFrom}</p>
-                    )}
-                  </td>
-
-                  {/* ── Consultation Fee ── */}
-                  <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                    <span
-                      className={`font-bold ${
-                        isPaid ? "text-(--text-primary)" : "text-(--text-secondary)"
-                      }`}
-                    >
-                      {formatCurrency(rec.consultationFee)}
-                    </span>
-                  </td>
-
-                  {/* ── Doctor % ── */}
-                  <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                    <div className="flex items-center justify-center gap-1.5">
-                      <div className="w-14 h-1.5 rounded-full bg-(--semi-card-bg) overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-amber-400 transition-all duration-500"
-                          style={{ width: `${rec.doctorPercentage}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
-                        {rec.doctorPercentage}%
-                      </span>
-                    </div>
-                  </td>
-
-                  {/* ── Clinic % ── */}
-                  <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                    <div className="flex items-center justify-center gap-1.5">
-                      <div className="w-14 h-1.5 rounded-full bg-(--semi-card-bg) overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-teal-400 transition-all duration-500"
-                          style={{ width: `${rec.clinicPercentage}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-semibold text-teal-600 dark:text-teal-400">
-                        {rec.clinicPercentage}%
-                      </span>
-                    </div>
-                  </td>
+                    </td>
+                  )}
 
                   {/* ── Doctor Share ── */}
-                  <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                    {isPaid ? (
-                      <span className="font-semibold text-amber-600 dark:text-amber-400">
-                        {formatCurrency(rec.doctorShare)}
-                      </span>
-                    ) : (
-                      <span className="text-(--text-secondary) opacity-40 text-xs">—</span>
-                    )}
+                  <td className="px-4 py-4 whitespace-nowrap text-center">
+                    <div className="flex flex-col items-center gap-1.5">
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-20 h-1.5 rounded-full bg-(--semi-card-bg) overflow-hidden border border-(--card-border)">
+                          <div
+                            className="h-full rounded-full bg-amber-500 transition-all duration-500"
+                            style={{ width: `${rec.doctorPercentage}%` }}
+                          />
+                        </div>
+                        <span className="text-xs font-bold text-amber-500">
+                          {rec.doctorPercentage}%
+                        </span>
+                      </div>
+                      {isPaid ? (
+                        <span className="text-sm font-black text-(--text-primary)">
+                          {formatCurrency(rec.doctorShare)}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-(--text-secondary) opacity-50">—</span>
+                      )}
+                    </div>
                   </td>
 
                   {/* ── Clinic Share ── */}
-                  <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                    {isPaid ? (
-                      <span className="font-semibold text-teal-600 dark:text-teal-400">
-                        {formatCurrency(rec.clinicShare)}
-                      </span>
-                    ) : (
-                      <span className="text-(--text-secondary) opacity-40 text-xs">—</span>
-                    )}
+                  <td className="px-4 py-4 whitespace-nowrap text-center">
+                    <div className="flex flex-col items-center gap-1.5">
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-20 h-1.5 rounded-full bg-(--semi-card-bg) overflow-hidden border border-(--card-border)">
+                          <div
+                            className="h-full rounded-full bg-teal-500 transition-all duration-500"
+                            style={{ width: `${rec.clinicPercentage}%` }}
+                          />
+                        </div>
+                        <span className="text-xs font-bold text-teal-500">
+                          {rec.clinicPercentage}%
+                        </span>
+                      </div>
+                      {isPaid ? (
+                        <span className="text-sm font-black text-(--text-primary)">
+                          {formatCurrency(rec.clinicShare)}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-(--text-secondary) opacity-50">—</span>
+                      )}
+                    </div>
                   </td>
 
-                  {/* ── Payment Status ── */}
-                  <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                    <span className={badge.wrapper}>
-                      <Icon size={11} />
+                  {/* ── Status ── */}
+                  <td className="px-4 py-4 whitespace-nowrap text-center">
+                    <span className={`${badge.wrapper} px-3 py-1.5 shadow-sm border border-current/10`}>
+                      <Icon size={13} />
                       {badge.label}
                     </span>
                   </td>
 
                   {/* ── Actions ── */}
-                  <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                    <div className="flex items-center justify-center gap-2">
-                      {/* Edit doctor profit share */}
+                  <td className="px-4 py-4 whitespace-nowrap text-center">
+                    <div className="flex items-center justify-center gap-3">
                       <button
                         onClick={() => handleEditDoctor(rec)}
-                        className="p-1.5 rounded-lg hover:bg-(--hover-bg) text-(--text-secondary) hover:text-teal-500 transition-colors"
+                        className="p-2 rounded-xl bg-(--semi-card-bg) border border-(--card-border) text-(--text-secondary) hover:text-teal-500 hover:border-teal-500/30 hover:bg-teal-500/10 transition-all shadow-sm"
                         title="تعديل نسبة أرباح الطبيب"
                       >
-                        <Edit3 size={14} />
+                        <Edit3 size={15} />
                       </button>
-
-                      {/* Toggle paid / cancelled (disabled for auto-cancelled) */}
-                      {isCancelled ? (
-                        <span className="text-xs text-(--text-secondary) opacity-40 px-1">—</span>
-                      ) : (
-                        <button
-                          onClick={() => handleToggle(rec)}
-                          disabled={isProcessing}
-                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all disabled:opacity-50 ${
-                            isPaid
-                              ? "bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400 hover:bg-rose-200"
-                              : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 hover:bg-emerald-200"
-                          }`}
-                        >
-                          {isProcessing ? (
-                            <span className="w-3 h-3 rounded-full border-2 border-current/30 border-t-current animate-spin inline-block" />
-                          ) : isPaid ? (
-                            "إلغاء الدفع"
-                          ) : (
-                            "تحديد كمدفوع"
-                          )}
-                        </button>
-                      )}
                     </div>
                   </td>
                 </tr>
@@ -455,26 +399,36 @@ export default function DoctorEarningsTable({
 
           {/* ── Totals footer — paid appointments only ── */}
           <tfoot>
-            <tr className="border-t-2 border-(--card-border) bg-(--semi-card-bg)">
+            <tr className="border-t border-(--card-border) bg-(--card-bg) shadow-[0_-4px_20px_rgba(0,0,0,0.02)]">
               <td
-                className="px-4 py-3 font-bold text-(--text-primary) text-sm"
-                colSpan={3}
+                className="px-4 py-5 font-black text-(--text-primary) text-sm"
+                colSpan={hideDoctorColumn ? 1 : 2}
               >
-                إجمالي المدفوعات ({paidRecs.length} موعد)
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  إجمالي الأرباح من ({paidRecs.length}) موعد مدفوع:
+                  <span className="text-emerald-500 ml-1 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                    {formatCurrency(totalRevenue)}
+                  </span>
+                </div>
               </td>
-              <td className="px-4 py-3 text-center font-bold text-(--text-primary)">
-                {formatCurrency(totalRevenue)}
+              <td className="px-4 py-5 text-center">
+                <div className="flex flex-col items-center">
+                  <span className="text-[10px] text-(--text-secondary) uppercase tracking-wider mb-1">إجمالي حصة الأطباء</span>
+                  <span className="text-base font-black text-amber-500">
+                    {formatCurrency(totalDocShare)}
+                  </span>
+                </div>
               </td>
-              <td className="px-4 py-3 text-center">—</td>
-              <td className="px-4 py-3 text-center">—</td>
-              <td className="px-4 py-3 text-center font-bold text-amber-600 dark:text-amber-400">
-                {formatCurrency(totalDocShare)}
+              <td className="px-4 py-5 text-center">
+                <div className="flex flex-col items-center">
+                  <span className="text-[10px] text-(--text-secondary) uppercase tracking-wider mb-1">إجمالي حصة العيادة</span>
+                  <span className="text-base font-black text-teal-500">
+                    {formatCurrency(totalCliShare)}
+                  </span>
+                </div>
               </td>
-              <td className="px-4 py-3 text-center font-bold text-teal-600 dark:text-teal-400">
-                {formatCurrency(totalCliShare)}
-              </td>
-              <td className="px-4 py-3 text-center">—</td>
-              <td className="px-4 py-3 text-center">—</td>
+              <td className="px-4 py-5 text-center" colSpan={2}></td>
             </tr>
           </tfoot>
         </table>
